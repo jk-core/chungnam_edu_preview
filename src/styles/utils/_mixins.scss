@@ -1,0 +1,197 @@
+@use "../tokens/spacing" as s;
+@use "../tokens/typography" as t;
+@use "./media" as media;
+
+// KRDS 차용 — 콘텐츠 컨테이너와 좌우 여백
+@mixin container {
+  width: 100%;
+  max-width: s.$container-max;
+  margin-inline: auto;
+  padding-inline: s.$gutter-desktop;
+
+  @include media.tablet {
+    padding-inline: s.$gutter-tablet;
+  }
+
+  @include media.mobile {
+    padding-inline: s.$gutter-mobile;
+  }
+}
+
+/**
+ * 가로로 늘어선 카드들의 높이를 칸 높이에 맞춘다.
+ * 내용 길이(메터 막대·증감 표시 유무 등)에 따라 카드 키가 들쭉날쭉해지는 것을 막는다.
+ * 카드 컴포넌트 자체(.stat/.card/.pane)는 height:100% 를 갖고 있으므로,
+ * 여기서는 Reveal 같은 애니메이션 래퍼 한 겹만 늘려 주면 된다.
+ */
+@mixin stretch-cells {
+  align-items: stretch;
+
+  > * {
+    height: 100%;
+  }
+}
+
+// 스크린리더 전용
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@mixin focus-ring($offset: 2px) {
+  outline: 2px solid var(--brand);
+  outline-offset: $offset;
+}
+
+/*
+  키보드로 다닐 때만 켜지는 포커스 표시.
+
+  `outline` 은 전역 규칙이 포인터 입력에서 꺼 주지만(styles/base/_global.scss),
+  테두리·그림자로 포커스를 그리는 자리는 스스로 꺼야 마우스 클릭 뒤 흔적이 남지 않는다.
+*/
+@mixin keyboard-focus {
+  :root[data-input="keyboard"] &:focus-visible {
+    @content;
+  }
+}
+
+/*
+  누르는 순간에만 도는 눌림 반응.
+
+  포커스 표시를 키보드 전용으로 돌려 놓았으니, 마우스로 누른 사실은 이 반응이 알려 준다.
+  움직임을 줄이기로 한 환경에서는 크기를 건드리지 않는다.
+*/
+@mixin press($scale: 0.96) {
+  /*
+    전환은 `:active` 안에서만 건다. 바깥에 `transition` 을 쓰면 컴포넌트가 이미 잡아 둔
+    색·테두리 전환을 통째로 덮어써 버린다. 손을 떼면 바로 제자리로 돌아온다.
+  */
+  &:active:not(:disabled) {
+    transform: scale($scale);
+    transition: transform 0.07s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+}
+
+/*
+  폼에 서는 입력칸의 상자.
+
+  글자칸·숫자칸·검색기·라디오·달력이 한 줄에 나란히 서므로 높이·모서리·글자를 한곳에서 정한다.
+  이 믹스인 없이 파일마다 손으로 그렸더니 모서리가 셋(8·12·999px), 높이가 셋(36·38.8·40px),
+  글자 크기가 넷(12·13·14·15px)으로 갈렸다.
+
+  `:read-only` 를 input·textarea 로 한정하는 것이 핵심이다 — 그 의사클래스는 「편집 가능하지
+  않은 모든 요소」에 걸려서, 상자를 button 에 씌우면 잠기지도 않은 칸이 회색으로 칠해진다.
+*/
+@mixin control-box {
+  @include t.body-sm;
+
+  width: 100%;
+  min-height: s.$control-height;
+  padding: s.$space-2 s.$space-3;
+  border: 1px solid var(--border);
+  border-radius: s.$radius-sm;
+  background-color: var(--surface);
+  color: var(--text-strong);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &::placeholder {
+    color: var(--text-faint);
+  }
+
+  @include keyboard-focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:disabled,
+  &:is(input, textarea):read-only {
+    background-color: var(--surface-sunken);
+    color: var(--text-muted);
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--critical);
+  }
+}
+
+/*
+  툴바에 서는 칩의 상자.
+
+  폼 칸과 다른 물건이다 — 버튼·세그먼트와 나란히 서므로 그쪽 키(36px)와 알약 모서리를 따른다.
+  폼 칸이 이 모습을 쓰거나 칩이 `control-box` 를 쓰는 일은 없다. 한 컴포넌트는 둘 중 하나다.
+*/
+@mixin chip-box {
+  @include t.label-md;
+
+  min-height: s.$control-height-chip;
+  padding: 0 s.$space-4;
+  border: 1px solid var(--border);
+  border-radius: s.$radius-full;
+  background-color: var(--surface);
+  color: var(--text-strong);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &::placeholder {
+    color: var(--text-faint);
+  }
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  @include keyboard-focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:disabled {
+    background-color: var(--surface-sunken);
+    color: var(--text-muted);
+  }
+}
+
+@mixin card-surface {
+  background-color: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-lg;
+  box-shadow: var(--shadow-sm);
+}
+
+@mixin truncate($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  } @else {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+  }
+}
+
+// 가로 스크롤 영역 (모바일 LNB 탭 등) — 스크롤바 숨김
+@mixin scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

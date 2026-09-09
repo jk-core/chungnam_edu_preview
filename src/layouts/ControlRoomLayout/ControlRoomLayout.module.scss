@@ -1,0 +1,591 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+.room {
+  /*
+    상황판 안의 상자는 모두 이 반지름을 쓴다.
+
+    판·카드·막대·사진 칸이 저마다 다른 곡률로 놓이면 도면 위에 부품이 흩어진 것처럼 보인다.
+    한 값으로 묶어 두면 어느 칸이든 같은 자로 잘라 낸 것으로 읽힌다. 값은 프로젝트 전체가
+    쓰는 12px 과 같다. 알약과 동그라미는 이 규칙 밖이다 — 그것들은 상자가 아니라 표시다.
+  */
+  --room-radius: 12px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: max(100vh, 1080px);
+  padding: s.$space-4 s.$space-5 s.$space-5;
+  overflow: hidden;
+
+  /*
+    도면 위에 판을 얹은 바탕.
+
+    관제 화면은 지도·표·게이지가 각자 떠 있어 판 사이 틈이 허전하다. 설계 도면처럼 눈금을
+    깔아 두면 그 틈이 「아직 그리지 않은 자리」 가 아니라 좌표를 가진 판 위로 읽힌다.
+    눈금은 판에 거의 다 가려지고 틈과 가장자리로만 비치므로 아주 옅게 둔다.
+
+    맨 위 칸은 경보로 물드는 자리다. 두 마디가 같은 색인 그러데이션은 곧 한 겹의 단색 판이라,
+    바탕 그림을 다시 적지 않고 그 위에 색만 한 겹 얹을 수 있다. 경보가 없으면 투명이다.
+  */
+
+  /*
+    눈금 한 칸과 큰 눈금.
+    큰 눈금은 잔 눈금의 정확히 다섯 배다 — 배수가 아니면 두 격자가 서로 어긋난 자리에서 만나
+    같은 간격이 두 종류로 보인다.
+  */
+  --grid-unit: 24px;
+  --grid-major: calc(var(--grid-unit) * 5);
+
+  /*
+    선 색은 바탕이 어떻든 같은 굵기로 읽혀야 한다.
+    7% 로 두었더니 왼쪽 위 따뜻한 자리에서는 잔 눈금이 통째로 묻혀, 그 구간만 큰 눈금 간격으로
+    보이고 번짐이 끝나는 자리부터 줄이 갑자기 늘어나는 것처럼 보였다.
+  */
+  --grid-line: rgb(from var(--brand) r g b / 10%);
+  --grid-line-strong: rgb(from var(--brand) r g b / 16%);
+  --grid-mark: rgb(from var(--brand) r g b / 22%);
+
+  /*
+    격자는 큰 눈금 한 칸(120px)짜리 타일 하나로 그린다.
+
+    겹마다 제 간격으로 판을 통째로 채우게 두면 겹끼리 셈이 갈린다. 네 겹을 같은 크기의 타일에
+    담으면 셈이 하나로 묶인다 — 타일 안에서 잔 눈금은 정확히 다섯 번 반복하고, 큰 눈금은 타일
+    경계에 선다. 어느 칸을 재도 24px 정사각형이다.
+
+    타일은 판의 왼쪽 위 모서리에서 시작한다. 가운데 맞춤은 쓰지 않는다 — `center` 는 첫 타일을
+    (판 너비 − 타일 너비) / 2 에 놓으므로, 판이 타일의 배수여도 그 몫이 타일의 배수가 아니면
+    격자가 반 칸 밀린다. 720px 판에서 (720−120)/2 = 300 이라 60px 밀렸고, 그래서 양쪽 끝에
+    반쪽짜리 칸이 생겼다. 모서리에 못 박으면 0·24·48… 로 떨어져 셈이 어긋날 자리가 없다.
+
+    시작 자리는 안쪽 여백이 아니라 판의 모서리다(border-box). 여백 값을 손대도 격자가 밀리지 않는다.
+  */
+  background:
+    /* 경보 물듦 — 상시 점멸이 되어 걷어냈다(2026-08-21 회의). 되살릴 때는 이 줄만 풀면 된다.
+       linear-gradient(var(--room-wash, transparent), var(--room-wash, transparent)), */
+
+    /* 큰 눈금 — 타일 경계에 한 줄씩 */
+    linear-gradient(90deg, var(--grid-line-strong) 0 1px, transparent 1px),
+    linear-gradient(180deg, var(--grid-line-strong) 0 1px, transparent 1px),
+
+    /* 잔 눈금 — 타일 안에서 다섯 번 */
+    repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px var(--grid-unit)),
+    repeating-linear-gradient(180deg, var(--grid-line) 0 1px, transparent 1px var(--grid-unit)),
+
+    /*
+      왼쪽 위에서 퍼지던 따뜻한 번짐은 걷어냈다.
+      격자 아래에서 바탕만 물들이는 것이 아니라 그 자리의 옅은 선까지 함께 지워, 판의 한쪽만
+      눈금 간격이 다른 것처럼 보이게 했다. 위아래로만 도는 결은 그대로 둔다 — 가로줄 전체가
+      같은 자리에서 같은 만큼 옅어지므로 간격이 달라 보이지 않는다.
+    */
+    /*
+      바탕에 도는 충남 CI 결 (2026-09-04 회의 · 조치사항 #8 — 배경 그라데이션).
+
+      네 모서리에서 아주 옅게 번져 들어온다. 위쪽 두 색은 머리띠가 쓰는 파랑·청록이라 띠에서
+      바탕으로 색이 이어지고, 아래쪽 둘은 반대편 주황·민트라 판이 놓이지 않은 구석이 회색으로
+      죽지 않는다. 6% 를 넘기면 판 위의 상태색(경고 주황·위험 빨강)과 다투기 시작한다.
+    */
+    radial-gradient(60% 46% at 6% 0%, rgb(from var(--ci-4) r g b / 6%) 0%, transparent 100%),
+    radial-gradient(52% 40% at 96% 4%, rgb(from var(--ci-2) r g b / 5%) 0%, transparent 100%),
+    radial-gradient(58% 42% at 2% 100%, rgb(from var(--ci-6) r g b / 4%) 0%, transparent 100%),
+    radial-gradient(58% 42% at 100% 96%, rgb(from var(--ci-1) r g b / 4%) 0%, transparent 100%),
+
+    linear-gradient(180deg, var(--sky-top) 0%, var(--paper) 46%);
+  background-origin: border-box;
+  background-position: 0 0;
+  background-size:
+    var(--grid-major) var(--grid-major),
+    var(--grid-major) var(--grid-major),
+    var(--grid-major) var(--grid-major),
+    var(--grid-major) var(--grid-major),
+    auto,
+    auto,
+    auto,
+    auto,
+    auto;
+
+  /*
+    도면 테두리의 네 모서리 꺾쇠.
+
+    눈금만으로는 화면 가장자리가 어디까지인지 흐릿하다. 모서리만 꺾어 두면 도면을 펼쳐 놓은
+    자리처럼 판이 잡히고, 선을 네 변에 다 두르는 것보다 조용하다. 모서리마다 가로·세로
+    한 획씩 여덟 겹을 깐다 — 한 겹으로 그리려 하면 변까지 이어져 액자가 된다.
+  */
+  &::before {
+    --corner: var(--grid-unit);
+
+    content: "";
+    position: absolute;
+
+    /* 격자 한 칸만큼 들여 세운다 — 꺾쇠가 첫 잔 눈금 위에 앉아 따로 노는 선이 되지 않는다 */
+    inset: var(--grid-unit);
+    background:
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 0 0 / var(--corner) 1px no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 0 0 / 1px var(--corner) no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 100% 0 / var(--corner) 1px no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 100% 0 / 1px var(--corner) no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 0 100% / var(--corner) 1px no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 0 100% / 1px var(--corner) no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 100% 100% / var(--corner) 1px no-repeat,
+      linear-gradient(var(--grid-mark), var(--grid-mark)) 100% 100% / 1px var(--corner) no-repeat;
+    pointer-events: none;
+  }
+
+  /* 어두운 바탕에서는 같은 투명도로는 선이 묻힌다 */
+  [data-theme="dark"] & {
+    --grid-line: rgb(from var(--brand) r g b / 13%);
+    --grid-line-strong: rgb(from var(--brand) r g b / 20%);
+    --grid-mark: rgb(from var(--brand) r g b / 26%);
+  }
+
+  /*
+    경보 결마다의 색과 세기.
+
+    바탕 물듦은 걷어냈지만(아래 주석) 결마다의 색은 남겨 둔다 — 되살릴 때 이 값들이 그대로
+    쓰이고, 어느 결이 무슨 색인지를 한 곳에만 적어 두어야 두 자리가 어긋나지 않는다.
+
+    &[data-alert] {
+      --room-wash: rgb(from var(--alert-color) r g b / calc(var(--pulse) * var(--alert-wash)));
+    }
+  */
+
+  &[data-alert="critical"] {
+    --alert-color: var(--critical);
+    --alert-weight: 5px;
+    --alert-wash: 18%;
+  }
+
+  &[data-alert="caution"] {
+    --alert-color: var(--caution);
+    --alert-weight: 3px;
+    --alert-wash: 13%;
+  }
+
+  &[data-alert="offline"] {
+    --alert-color: var(--offline);
+    --alert-weight: 2px;
+    --alert-wash: 9%;
+  }
+
+  /*
+    @include media.reduced-motion {
+      &[data-alert] {
+        --room-wash: rgb(from var(--alert-color) r g b / var(--alert-wash));
+      }
+    }
+  */
+
+  @include media.kiosk {
+    padding: s.$space-5 s.$space-6 s.$space-6;
+  }
+
+  // 좁은 화면은 세로로 쌓고 스크롤을 허용한다.
+  @include media.tablet {
+    height: auto;
+    min-height: 1080px;
+    overflow: visible;
+  }
+
+  @include media.mobile {
+    padding: s.$space-3;
+  }
+
+  &__body {
+    flex: 1;
+    min-height: 0;
+    padding-top: s.$space-4;
+  }
+}
+
+/*
+  화면 가장자리 경보 등.
+
+  300개소 규모에서는 주의·경고·통신두절이 늘 한두 건은 있어 점멸이 상시 동작이 된다.
+  종일 걸어 두는 화면에서 눈이 먼저 지치므로 걷어냈다(2026-08-21 회의). 상태는 판 안의
+  색 구분이 이미 말한다. 되살릴 때는 아래 규칙만 풀면 된다.
+
+  .edge {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow:
+      inset 0 0 0 calc(var(--pulse) * var(--alert-weight, 4px)) var(--alert-color),
+      inset 0 0 34px -6px rgb(from var(--alert-color) r g b / calc(var(--pulse) * 100%));
+
+    @include media.reduced-motion {
+      box-shadow: inset 0 0 0 3px var(--alert-color);
+    }
+  }
+*/
+
+.bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: s.$space-4;
+  padding-bottom: s.$space-4;
+  border-bottom: 1px solid var(--border-subtle);
+
+  /*
+    머리를 받치는 충남 CI 여섯 색 띠 (2026-09-04 회의 · 조치사항 #8).
+
+    경계선 하나를 색으로 갈아 끼운 것뿐이라 자리를 더 먹지 않는다. 여섯을 고르게 나누지 않고
+    왼쪽을 넓게 잡았다 — 로고와 이름이 서는 쪽에 색이 모여야 「이 기관의 화면」 으로 읽히고,
+    오른쪽 끝까지 같은 굵기로 이으면 그저 무지개 줄이 된다.
+  */
+  &::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--ci-4) 0%,
+      var(--ci-2) 14%,
+      var(--ci-6) 26%,
+      var(--ci-1) 38%,
+      var(--ci-5) 48%,
+      var(--ci-3) 58%,
+      transparent 100%
+    );
+  }
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: s.$space-4;
+    min-width: 0;
+  }
+
+  &__variant {
+    @include t.label-sm;
+
+    display: inline-block;
+    margin-left: s.$space-3;
+    padding: 1px s.$space-2;
+    border: 1px solid var(--brand-soft-border);
+    border-radius: s.$radius-full;
+    background-color: var(--brand-soft);
+    color: var(--brand-contrast);
+    font-style: normal;
+    vertical-align: middle;
+  }
+
+  &__clock {
+    @include t.data-lg;
+
+    color: var(--text-strong);
+  }
+
+  /*
+    시계 자릿수 한 칸.
+    가장 넓은 숫자(`0`)의 폭을 칸으로 삼아 어떤 숫자가 와도 자리가 같다 — 글꼴이 tabular 를
+    지원하지 않아도 폭이 고정된다. 지원하는 글꼴에서는 칸이 글자에 꼭 맞아 티가 나지 않는다.
+  */
+  &__digit {
+    display: inline-block;
+    width: 0.84em;
+    text-align: center;
+  }
+
+  &__date {
+    @include t.caption;
+
+    display: block;
+    color: var(--text-faint);
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: s.$space-2;
+    height: 36px;
+    padding: 0 s.$space-4;
+    border: 1px solid var(--border);
+    border-radius: s.$radius-full;
+    background: none;
+    color: var(--text-muted);
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+
+    @include t.label-sm;
+
+    &:hover {
+      background-color: var(--surface-hover);
+      border-color: var(--border-strong);
+      color: var(--text-strong);
+    }
+  }
+
+  &__left,
+&__right {
+    display: flex;
+    align-items: center;
+    gap: s.$space-4;
+    flex-wrap: wrap;
+  }
+}
+
+/* 화면에 깔린 값의 기준 시각 — 옆 벽시계와 견주라고 나란히 세운다 */
+.collected {
+  @include t.caption;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--text-faint);
+
+  strong {
+    @include t.label-sm;
+
+    color: var(--text-muted);
+    font-family: var(--font-data);
+  }
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: s.$space-3;
+  min-width: 340px;
+  padding: s.$space-2 s.$space-2 s.$space-2 s.$space-4;
+  border: 1px solid var(--border);
+  border-radius: s.$radius-full;
+  background-color: var(--surface);
+  color: var(--text-muted);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    border-color: var(--brand);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &__text {
+    @include t.body-sm;
+    @include mx.truncate;
+
+    flex: 1;
+    text-align: left;
+  }
+}
+
+/* ── 시안 E · 사이버네틱 ────────────────────────────────────────────────
+   판도 값도 자리도 그대로 두고 **토큰만 다시 맨다**. 판·막대·눈금·차트가 모두 같은 토큰을
+   보고 있으므로, 여기서 색 몇 줄을 갈아 끼우면 화면 전체의 결이 한 번에 바뀐다.
+
+   글꼴·모서리·질감은 두 테마가 같은 것을 쓰고 **갈리는 것은 색뿐이다** — 라이트에서만
+   각이 서고 다크에서만 주사선이 깔리면 같은 시안으로 보이지 않는다.
+   글꼴은 라틴·숫자만 Orbitron 이 받고 한글은 Pretendard 로 떨어진다 — 계측값이 기계의
+   글씨가 되고 설명은 읽히는 글씨로 남는다.
+   ──────────────────────────────────────────────────────────────────── */
+.room[data-skin="cyber"] {
+  /*
+    글꼴은 제목·라벨·계측값까지 한 벌로 간다 — 수치만 다른 글꼴이면 같은 화면이 두 벌로 읽힌다.
+
+    Orbitron 은 자릿수 폭이 고르지 않다 (30px 기준 `1` 11.7px, `0` 25.0px). `tnum` 기능이
+    없어 CSS 로 켤 수도 없다. 그래서 매초 바뀌는 벽시계만 자릿수 칸을 못 박아 흔들림을 잡고
+    (`RoomClock` 의 `--digit`), 나머지 수치는 이 글꼴의 비례폭을 그대로 받는다.
+  */
+  --font-sans: "Orbitron", "Pretendard Variable", pretendard, sans-serif;
+  --font-data: "Orbitron", "Space Grotesk", sans-serif;
+
+  /* 모서리를 거의 직각으로 — 둥근 상자는 안내 카드로 읽히고, 각진 상자는 계측 장비로 읽힌다 */
+  --room-radius: 2px;
+
+  /* ── 라이트 ── */
+  --paper: #eef3f9;
+  --paper-alt: #e4ebf3;
+  --surface: #fff;
+  --surface-raised: #fff;
+  --surface-sunken: #eaf0f6;
+  --surface-hover: #e4ebf3;
+
+  --text-strong: #0b1a2b;
+  --text: #1f2f42;
+  --text-muted: #566a80;
+  --text-faint: #8496a8;
+  --text-on-brand: #fff;
+  --text-on-solar: #1a1204;
+
+  --border: #cbd8e5;
+  --border-strong: #a9bccd;
+  --border-subtle: #dee7f0;
+
+  /* 시안 계열이 이 화면의 주색이다 — 서비스 기본 파랑과 갈라 놓는 자리다 */
+  --brand: #0ea5e9;
+  --brand-hover: #0c84bb;
+  --brand-active: #0a6a97;
+  --brand-soft: #ecfeff;
+  --brand-soft-border: #cffafe;
+  --brand-contrast: #0a6a97;
+
+  --ai-scan: #0ea5e9;
+  --ai-classify: #2f6fe4;
+  --ai-reason: #7c5cf0;
+  --ai-done: #10a85c;
+
+  --solar: #f59e0b;
+  --solar-deep: #f97316;
+  --solar-soft: #fffbeb;
+  --solar-line: #fde68a;
+  --solar-text: #b45309;
+
+  --ok: #16a34a;
+  --ok-soft: #f0fdf4;
+  --ok-text: #15803d;
+  --caution: #f59e0b;
+  --caution-soft: #fffbeb;
+  --caution-text: #b45309;
+  --critical: #e0331b;
+  --critical-soft: #fef2f2;
+  --critical-text: #b02216;
+  --offline: #8d96a3;
+  --offline-soft: #eceef2;
+  --offline-text: #4a5160;
+
+  --chart-grid: #dbe4ee;
+  --chart-axis: #8496a8;
+  --chart-generation: #f59e0b;
+  --chart-generation-soft: rgb(245 158 11 / 18%);
+  --chart-generation-focus: #f97316;
+  --chart-irradiance: #0ea5e9;
+  --chart-compare: #bcc2cc;
+
+  --map-surface: #e8eff7;
+  --map-border: #cbd8e5;
+  --map-scale-1: #eaf6fb;
+  --map-scale-2: #c9ecf6;
+  --map-scale-3: #96dcee;
+  --map-scale-4: #4fc0dd;
+  --map-scale-5: #0ea5e9;
+
+  --shadow-sm: 0 1px 2px rgb(11 26 43 / 8%);
+  --shadow-md: 0 2px 6px rgb(11 26 43 / 10%);
+  --shadow-lg: 0 8px 24px rgb(11 26 43 / 14%);
+  --shadow-focus: 0 0 0 3px rgb(14 165 233 / 28%);
+
+  /* 주사선 — 바탕이 밝을수록 옅어야 글자를 갉아먹지 않는다 */
+  --room-scanline: rgb(15 23 42 / 3.5%);
+
+  background-color: var(--paper);
+  color: var(--text);
+
+  /*
+    주사선.
+    브라운관을 흉내 내는 장식이지만 여기서는 몫이 있다 — 판 사이 빈 바탕이 눈금만 깔린 채
+    비어 보이던 것을 아주 옅은 결로 메워, 화면 전체가 하나의 계측기 표면으로 읽힌다.
+  */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, var(--room-scanline) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+
+  /*
+    주사선과 꺾쇠는 바탕에 그린 것이지 화면 위에 덮은 막이 아니다.
+    띄워 두지 않으면 판과 글자 위로 가로줄이 지나가 글씨가 갉여 보인다 — 머리띠와 본문을
+    한 겹 올려 바탕 그림이 늘 뒤에 남게 한다.
+  */
+  .bar,
+  .room__body {
+    position: relative;
+    z-index: 1;
+  }
+
+  /*
+    판.
+    테두리를 주색으로 바꾸고 머리에 한 줄을 얹는다. 안쪽으로 옅게 번지는 광까지 더해야
+    판이 바탕에 뚫린 구멍이 아니라 빛나는 계기판으로 보인다.
+  */
+  section[aria-label] {
+    border-color: rgb(from var(--brand) r g b / 26%);
+    background:
+      linear-gradient(90deg, var(--brand), transparent 55%) top left / 100% 2px no-repeat,
+      var(--surface);
+    box-shadow: inset 0 0 32px rgb(from var(--brand) r g b / 6%), var(--shadow-sm);
+  }
+
+  /* ── 다크 ── 갈리는 것은 색뿐이다 */
+  [data-theme="dark"] & {
+    --paper: #0d0f14;
+    --paper-alt: #12141b;
+    --surface: #181b23;
+    --surface-raised: #1d212a;
+    --surface-sunken: #12141b;
+    --surface-hover: #272c37;
+
+    --text-strong: #eef1f5;
+    --text: #b0b6c0;
+    --text-muted: #8b929c;
+    --text-faint: #676d78;
+    --text-on-brand: #06131c;
+
+    --border: #2c333c;
+    --border-strong: #3b444f;
+    --border-subtle: #20262e;
+
+    --brand: #4bbdd6;
+    --brand-hover: #6fcfe0;
+    --brand-active: #9abde8;
+    --brand-soft: #06283a;
+    --brand-soft-border: #0f5c78;
+    --brand-contrast: #6fcfe0;
+
+    --ai-scan: #4bbdd6;
+    --ai-classify: #5590d8;
+    --ai-reason: #8b5cf6;
+    --ai-done: #00e08a;
+
+    --solar: #ffb020;
+    --solar-deep: #ff6a3d;
+    --solar-soft: #2b2008;
+    --solar-line: #ffc933;
+    --solar-text: #ffd966;
+
+    --ok: #00e08a;
+    --ok-soft: #062b1e;
+    --ok-text: #00e08a;
+    --caution: #ffc933;
+    --caution-soft: #33260a;
+    --caution-text: #ffd966;
+    --critical: #ff4d6d;
+    --critical-soft: #33101a;
+    --critical-text: #ff4d6d;
+    --offline: #676d78;
+    --offline-soft: #20262e;
+    --offline-text: #8b929c;
+
+    --chart-grid: #272c37;
+    --chart-axis: #676d78;
+    --chart-generation: #ffb020;
+    --chart-generation-soft: rgb(255 176 32 / 20%);
+    --chart-generation-focus: #ff6a3d;
+    --chart-irradiance: #4bbdd6;
+    --chart-compare: #3b444f;
+
+    --map-surface: #12141b;
+    --map-border: #2c333c;
+    --map-scale-1: #12252d;
+    --map-scale-2: #163a46;
+    --map-scale-3: #1c5566;
+    --map-scale-4: #2f8ba3;
+    --map-scale-5: #4bbdd6;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 50%);
+    --shadow-md: 0 2px 6px rgb(0 0 0 / 55%);
+    --shadow-lg: 0 8px 24px rgb(0 0 0 / 60%);
+    --shadow-focus: 0 0 0 3px rgb(75 189 214 / 30%);
+
+    --room-scanline: rgb(0 0 0 / 22%);
+  }
+}

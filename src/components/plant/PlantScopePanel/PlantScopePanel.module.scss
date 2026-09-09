@@ -1,0 +1,128 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+.panel {
+  background-color: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-lg;
+  box-shadow: var(--shadow-sm);
+
+  &__heading {
+    margin: 0;
+  }
+
+  &__toggle {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: s.$space-3;
+    width: 100%;
+    padding: s.$space-4 s.$space-5;
+    background: none;
+    border: 0;
+    border-radius: s.$radius-lg;
+    text-align: left;
+    transition: background-color 0.16s ease;
+
+    &:hover {
+      background-color: var(--brand-soft);
+    }
+  }
+
+  &__current {
+    display: block;
+    min-width: 0;
+  }
+
+  &__label {
+    @include t.eyebrow;
+
+    display: block;
+    margin-bottom: 2px;
+    color: var(--text-faint);
+  }
+
+  &__name {
+    @include t.label-md;
+    @include mx.truncate;
+
+    display: block;
+    color: var(--text-strong);
+  }
+
+  &__meta {
+    @include t.caption;
+
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-family: var(--font-data);
+  }
+
+  &__chevron {
+    color: var(--text-faint);
+    transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+
+    @include media.reduced-motion {
+      transition: none;
+    }
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.28s cubic-bezier(0.2, 0.8, 0.3, 1);
+
+    &[data-open="true"] {
+      grid-template-rows: 1fr;
+    }
+
+    @include media.reduced-motion {
+      transition: none;
+    }
+  }
+
+  &__clip {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  &__inner {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-5;
+    padding: s.$space-1 s.$space-5 s.$space-5;
+
+    // 좌측 컬럼이 가로로 펴지는 구간에서는 선택 영역과 구조 트리를 나란히 둔다.
+    @include media.tablet {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+      gap: s.$space-6;
+      padding: s.$space-1 s.$space-5 s.$space-5;
+    }
+
+    @include media.mobile {
+      grid-template-columns: 1fr;
+      gap: s.$space-5;
+    }
+  }
+
+  &__pick {
+    padding-bottom: s.$space-4;
+    border-bottom: 1px solid var(--border-subtle);
+
+    @include media.tablet {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+  }
+}

@@ -1,0 +1,156 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-2;
+  height: 100%;
+  padding: s.$space-6;
+  background-color: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-lg;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--brand), transparent 78%);
+    opacity: 0;
+    transition: opacity 0.24s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--border);
+    box-shadow: var(--shadow-md);
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &__delta--up .stat__deltaValue {
+    color: var(--ok-text);
+  }
+
+  &__delta--down .stat__deltaValue {
+    color: var(--critical-text);
+  }
+
+  &--accent {
+    &::after {
+      background: linear-gradient(90deg, var(--solar), transparent 78%);
+    }
+
+    .stat__value {
+      color: var(--solar-text);
+    }
+
+    .stat__icon {
+      background-color: var(--solar-soft);
+      color: var(--solar-deep);
+    }
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: s.$space-3;
+  }
+
+  &__label {
+    color: var(--text-muted);
+
+    @include t.label-md;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: s.$radius-sm;
+    background-color: var(--brand-soft);
+    color: var(--brand);
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  &__value {
+    display: flex;
+    align-items: baseline;
+    gap: s.$space-2;
+    color: var(--text-strong);
+
+    @include t.data-lg;
+  }
+
+  &__unit {
+    color: var(--text-muted);
+
+    @include t.label-md;
+  }
+
+  &__delta {
+    display: flex;
+    align-items: baseline;
+    gap: s.$space-2;
+
+    @include t.body-sm;
+  }
+
+  &__deltaValue {
+    @include t.data-sm;
+  }
+
+  &__deltaLabel {
+    color: var(--text-faint);
+  }
+
+  &__meter {
+    display: flex;
+    align-items: center;
+    gap: s.$space-3;
+    margin-top: s.$space-1;
+  }
+
+  &__meterTrack {
+    flex: 1;
+    height: 5px;
+    background-color: var(--surface-sunken);
+    border-radius: s.$radius-full;
+    overflow: hidden;
+  }
+
+  &__meterFill {
+    height: 100%;
+    border-radius: s.$radius-full;
+    background: linear-gradient(90deg, var(--brand), var(--solar));
+    transition: width 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+
+  &__meterLabel {
+    color: var(--text-faint);
+    white-space: nowrap;
+
+    @include t.caption;
+  }
+
+  &__note {
+    margin-top: auto;
+    padding-top: s.$space-1;
+    white-space: normal;
+  }
+}
