@@ -12,7 +12,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: s.$space-8;
   min-height: 100vh;
   padding: s.$space-9 s.$space-6;
@@ -21,10 +20,17 @@
     var(--surface-sunken);
 
   &__head {
+    /*
+      위아래 여백을 자동으로 나눠 가운데에 세운다.
+
+      `justify-content: center` 로 세우지 않는다 — 갈래가 늘어 세로가 화면보다 길어지면
+      그 방식은 위쪽을 잘라 내고, 잘린 자리는 스크롤로도 닿지 않는다.
+    */
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: s.$space-3;
+    margin-top: auto;
     text-align: center;
   }
 
@@ -35,41 +41,53 @@
     color: var(--text-muted);
   }
 
+  &__groups {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-7;
+    width: 100%;
+    max-width: 1440px;
+  }
+
   &__foot {
     @include t.caption;
 
-    margin: 0;
+    margin: 0 0 auto;
     color: var(--text-faint);
     line-height: 1.7;
     text-align: center;
   }
 }
 
-/*
-  다섯 장을 석 장씩 끊어 두 줄로 세운다.
+/* 갈래 하나가 한 줄이다 — 통합관제 다섯, 교육용 셋, 관리자 콘솔 하나. */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-3;
 
-  한 줄에 다 세우면 카드가 설명을 담기에 좁아진다 — 넉 장까지는 한 줄이 나았지만 관리자 콘솔이
-  붙으면서 폭이 모자란다.
+  &__title {
+    @include t.eyebrow;
 
-  좁아지면 둘씩, 더 좁아지면 하나씩 내려앉는다 — 시연은 대개 큰 화면에서 하지만 노트북에서
-  열어 보는 일도 있어, 카드가 찌그러지느니 줄을 바꾸는 편이 낫다.
-*/
-.list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: s.$space-4;
-  width: 100%;
-  max-width: 1080px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  @include media.tablet {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    color: var(--brand-contrast);
   }
 
-  @include media.mobile {
-    grid-template-columns: minmax(0, 1fr);
+  /*
+    카드 폭을 줄마다 같게 둔다.
+
+    `auto-fill` 이라 갈래에 카드가 셋뿐이어도 남은 트랙이 접히지 않는다 — `auto-fit` 으로
+    두면 그 셋이 줄 전체를 나눠 가지면서 위 줄의 다섯 장보다 뚱뚱해지고, 갈래마다 카드 크기가
+    달라 무엇이 더 중한 것처럼 읽힌다.
+
+    열 수는 폭이 정한다. 1440px 를 다 쓰면 다섯 열이고, 좁아지면 넷·셋·둘로 접히다가
+    폰에서는 한 줄에 한 장이 된다. `min()` 은 카드 최소 폭보다 좁은 화면에서 넘치지 않게 한다.
+  */
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+    gap: s.$space-4;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 }
 
@@ -100,12 +118,6 @@
   &:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
-  }
-
-  &__kind {
-    @include t.eyebrow;
-
-    color: var(--brand-contrast);
   }
 
   &__name {

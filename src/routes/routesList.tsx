@@ -7,8 +7,9 @@ import type { RouteObject } from 'react-router-dom';
 /*
   ⚠️ 시연용 라우터 (2026-09-09 지시) — 이 파일만 되돌리면 원래 사이트맵으로 돌아온다.
 
-  통합관제·교육용 대시보드 시안 셋·관리자 콘솔만 열어 두고 나머지 길을 모두 막는다. 막힌 주소로
-  들어오면 전부 `/preview-choice` 로 모이므로, 시연 중에 주소를 잘못 짚어도 빈 화면을 만나지 않는다.
+  통합관제 시안 다섯·교육용 대시보드 시안 셋·관리자 콘솔만 열어 두고 나머지 길을 모두 막는다.
+  막힌 주소로 들어오면 전부 `/preview-choice` 로 모이므로, 시연 중에 주소를 잘못 짚어도
+  빈 화면을 만나지 않는다.
 
   로그인 게이트도 함께 걷었다. `/control` 과 `/admin` 은 원래 `RequireAuth` 뒤에 있었는데,
   로그인 화면까지 막아 둔 마당에 게이트를 남기면 그 두 곳으로 들어갈 길이 아예 없어진다.
@@ -20,6 +21,7 @@ import type { RouteObject } from 'react-router-dom';
 
 const SolarEduPage = lazy(() => import('@/pages/SolarEdu'));
 const ControlRoomPage = lazy(() => import('@/pages/ControlRoom'));
+const ControlRoomDraftPage = lazy(() => import('@/pages/ControlRoom/drafts'));
 const PreviewChoicePage = lazy(() => import('@/pages/PreviewChoice'));
 const AdminLayout = lazy(() => import('@/layouts/AdminLayout'));
 const AdminPage = lazy(() => import('@/pages/Admin'));
@@ -34,8 +36,17 @@ function SolarEduRedirect() {
 export const routes: RouteObject[] = [
   { path: PATH.PREVIEW_CHOICE, element: <PreviewChoicePage /> },
 
-  // 통합관제 상황판 — 헤더·LNB 없이 화면을 다 쓴다.
+  /*
+    통합관제 상황판 — 헤더·LNB 없이 화면을 다 쓴다.
+
+    시안 b~e 는 값도 판도 시안 a 의 것을 그대로 쓰고 **어디에 세우는가** 와 **무슨 색으로
+    보이는가** 만 갈린다 (`ControlRoom/drafts`). 나란히 놓고 골라야 하므로 다섯을 다 연다.
+  */
   { path: PATH.CONTROL, element: <ControlRoomPage /> },
+  { path: PATH.CONTROL_B, element: <ControlRoomDraftPage draft="b" /> },
+  { path: PATH.CONTROL_C, element: <ControlRoomDraftPage draft="c" /> },
+  { path: PATH.CONTROL_D, element: <ControlRoomDraftPage draft="d" /> },
+  { path: PATH.CONTROL_E, element: <ControlRoomDraftPage draft="e" /> },
 
   /*
     교육용 대시보드 시안 셋. 시안 주소를 학교 주소(`/solar-edu/:orgId`)보다 **먼저** 세운다 —
