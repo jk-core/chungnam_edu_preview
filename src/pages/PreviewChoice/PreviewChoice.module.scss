@@ -46,14 +46,17 @@
 }
 
 /*
-  넉 장을 한 줄에 세운다.
+  다섯 장을 석 장씩 끊어 두 줄로 세운다.
+
+  한 줄에 다 세우면 카드가 설명을 담기에 좁아진다 — 넉 장까지는 한 줄이 나았지만 관리자 콘솔이
+  붙으면서 폭이 모자란다.
 
   좁아지면 둘씩, 더 좁아지면 하나씩 내려앉는다 — 시연은 대개 큰 화면에서 하지만 노트북에서
   열어 보는 일도 있어, 카드가 찌그러지느니 줄을 바꾸는 편이 낫다.
 */
 .list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: s.$space-4;
   width: 100%;
   max-width: 1080px;
