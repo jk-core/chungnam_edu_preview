@@ -41,24 +41,6 @@
     color: var(--caution-text);
   }
 
-  /* 시연용 되돌아가기 (2026-09-09 지시). 시연이 끝나면 마크업과 함께 걷는다. */
-  &__preview {
-    @include t.caption;
-
-    margin-left: auto;
-    color: var(--text-muted);
-    text-decoration: underline;
-
-    &:hover {
-      color: var(--brand);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--brand);
-      outline-offset: 2px;
-    }
-  }
-
   &__title {
     @include t.title-xl;
 

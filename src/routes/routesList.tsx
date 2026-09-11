@@ -7,15 +7,18 @@ import type { RouteObject } from 'react-router-dom';
 /*
   ⚠️ 시연용 라우터 (2026-09-09 지시) — 이 파일만 되돌리면 원래 사이트맵으로 돌아온다.
 
-  통합관제 시안 다섯·교육용 대시보드 시안 셋·관리자 콘솔만 열어 두고 나머지 길을 모두 막는다.
+  통합관제 시안 다섯과 교육용 대시보드 시안 셋만 열어 두고 나머지 길을 모두 막는다.
   막힌 주소로 들어오면 전부 `/preview-choice` 로 모이므로, 시연 중에 주소를 잘못 짚어도
   빈 화면을 만나지 않는다.
 
-  로그인 게이트도 함께 걷었다. `/control` 과 `/admin` 은 원래 `RequireAuth` 뒤에 있었는데,
-  로그인 화면까지 막아 둔 마당에 게이트를 남기면 그 두 곳으로 들어갈 길이 아예 없어진다.
+  **관리자 콘솔은 다시 막았다 (2026-09-11 지시).** 시연에서 보일 자리가 아니다 — 내부망 전용
+  화면이라 밖에서 열리는 것 자체가 맞지 않고, 열어 두면 고르개에서 누를 수 있게 된다.
 
-  **`PATH` 와 페이지 파일은 지우지 않았다.** 발전관리·AI진단·이용안내는 그대로 있고 길만 끊어 둔
-  것이라, 시연이 끝나면 이 파일을 이전 버전으로 되돌리는 것으로 끝난다.
+  로그인 게이트도 함께 걷었다. `/control` 은 원래 `RequireAuth` 뒤에 있었는데, 로그인 화면까지
+  막아 둔 마당에 게이트를 남기면 통합관제로 들어갈 길이 아예 없어진다.
+
+  **`PATH` 와 페이지 파일은 지우지 않았다.** 발전관리·AI진단·이용안내·관리자 콘솔은 그대로 있고
+  길만 끊어 둔 것이라, 시연이 끝나면 이 파일을 이전 버전으로 되돌리는 것으로 끝난다.
   되돌릴 자리: `git log --oneline -- src/routes/routesList.tsx` 에서 이 커밋 바로 앞.
 */
 
@@ -23,8 +26,6 @@ const SolarEduPage = lazy(() => import('@/pages/SolarEdu'));
 const ControlRoomPage = lazy(() => import('@/pages/ControlRoom'));
 const ControlRoomDraftPage = lazy(() => import('@/pages/ControlRoom/drafts'));
 const PreviewChoicePage = lazy(() => import('@/pages/PreviewChoice'));
-const AdminLayout = lazy(() => import('@/layouts/AdminLayout'));
-const AdminPage = lazy(() => import('@/pages/Admin'));
 
 /** 시안 이름이 빠진 `/solar-edu/:orgId` 를 같은 학교의 첫 시안으로 넘긴다. */
 function SolarEduRedirect() {
@@ -64,29 +65,6 @@ export const routes: RouteObject[] = [
   { path: PATH.SOLAR_EDU, element: <Navigate to={PATH.SOLAR_EDU_A} replace /> },
   { path: `${PATH.SOLAR_EDU}/:orgId`, element: <SolarEduRedirect /> },
 
-  /*
-    관리자 콘솔.
-
-    시연에서는 `RootLayout` 없이 `AdminLayout` 만 세운다 — 헤더 주메뉴에는 발전관리·AI진단·
-    이용안내가 그대로 서는데 그 길이 전부 막혀 있어, 헤더를 두면 누르는 족족 고르개로 튄다.
-
-    열 갈래를 한 줄씩 적지 않고 `:tab` 하나로 받는다. 어느 탭을 세울지는 `AdminPage` 가 이미
-    이름으로 고르고, 없는 이름이면 발전소·설비 관리로 되돌린다.
-
-    아래 두 줄은 등록·수정 폼이다. 폼이 모달이 아니라 페이지라 주소를 따로 갖고,
-    수정할 대상은 path 가 아니라 queryString 으로 온다 (`_shared/adminPath.ts`).
-  */
-  { path: PATH.ADMIN, element: <Navigate to={PATH.ADMIN_PLANTS} replace /> },
-  {
-    element: <AdminLayout />,
-    children: [
-      { path: `${PATH.ADMIN}/:tab`, element: <AdminPage /> },
-      { path: `${PATH.ADMIN}/:tab/:kind`, element: <AdminPage /> },
-      { path: `${PATH.ADMIN}/:tab/:kind/new`, element: <AdminPage depth="form" /> },
-      { path: `${PATH.ADMIN}/:tab/:kind/edit`, element: <AdminPage depth="form" /> },
-    ],
-  },
-
-  // 나머지는 전부 고르는 자리로. 메인(`/`)과 로그인도 여기에 걸린다.
+  // 나머지는 전부 고르는 자리로. 메인(`/`)과 로그인, 관리자 콘솔도 여기에 걸린다.
   { path: '*', element: <Navigate to={PATH.PREVIEW_CHOICE} replace /> },
 ];
