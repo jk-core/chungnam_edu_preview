@@ -47,15 +47,7 @@
     gap: s.$space-7;
     width: 100%;
     max-width: 1440px;
-  }
-
-  &__foot {
-    @include t.caption;
-
-    margin: 0 0 auto;
-    color: var(--text-faint);
-    line-height: 1.7;
-    text-align: center;
+    margin-bottom: auto;
   }
 }
 
@@ -141,14 +133,6 @@
     color: var(--text-strong);
   }
 
-  &__body {
-    @include t.body-sm;
-
-    flex: 1;
-    color: var(--text-muted);
-  }
-
-  /* 바닥에 붙는다 — 설명 길이가 카드마다 달라도 이 줄의 자리는 흔들리지 않는다 */
   &__go {
     @include t.label-sm;
 
