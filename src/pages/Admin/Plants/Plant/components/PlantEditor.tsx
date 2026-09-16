@@ -6,13 +6,13 @@ import { AddressSearchModal } from '@/components/common/AddressSearch';
 import { geocode } from '@/mocks/addresses';
 import { Button } from '@/components/common/Button';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { createForm, FileUpload, FormRow, FormSection } from '@/components/common/Form';
+import { createForm, FormRow, FormSection } from '@/components/common/Form';
 import { formatCapacity, formatPhone } from '@/utils/format';
 import { FormPage } from '@/pages/Admin/_shared/FormPage';
 import { listPath } from '@/pages/Admin/_shared/adminPath';
 import { Modal } from '@/components/common/Modal';
 import { MSG } from '@/configs/messages';
-import { NAME_MAX, PHOTO_MAX_COUNT, plantFormSchema } from '@/service/plant/type';
+import { plantFormSchema } from '@/service/plant/type';
 import { SCHOOL_LEVELS, SCHOOLS } from '@/mocks/schools';
 import { RecordPicker } from '@/components/common/RecordPicker';
 import { regionNameOfCode } from '@/configs/regions';
@@ -20,27 +20,23 @@ import { toast } from '@/stores/toastStore';
 import { useManagedUsers, usePlantAssets } from '@/hooks/usePlantAssets';
 import { usePyranometerRows } from '@/pages/Admin/Plants/Pyranometer/hooks/usePyranometerRows';
 import useAssetStore from '@/stores/assetStore';
-import type { UploadFile } from '@/components/common/Form';
 import type { PlantFormValues } from '@/service/plant/type';
 import type { ChangeLog } from '@/interface/changeLog';
 import type { PlantAsset } from '@/interface/asset';
 import styles from '@/pages/Admin/Admin.module.scss';
 import { usePlantChangeLog } from '../hooks/usePlantChangeLog';
 import { usePlantCapacity } from '../hooks/usePlantData';
-import {
-  EMPTY_VALUES,
-  irradLabelOf,
-  photoNames,
-  toFormValues,
-  toPhotos,
-  toUploadFiles,
-  userLabelOf,
-} from './values';
+import { EMPTY_VALUES, irradLabelOf, toFormValues, userLabelOf } from './values';
 
 /** 서버가 매기는 번호 자리. 시드가 10000 번대를 쓰므로 그 뒤에서 이어 붙인다. */
 const PLANT_NO_BASE = 10000;
 
 const Form = createForm<PlantFormValues>();
+
+/** 빈 문자열을 서버가 쓰는 null 로 되돌린다. */
+function toId(value: string): number | null {
+  return value === '' ? null : Number(value);
+}
 
 /** 발전소 등록·수정 (SFR-016-01~04/06) */
 export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
@@ -68,11 +64,6 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
 
   const [pending, setPending] = useState<PlantFormValues | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  /*
-    대표이미지는 폼 밖에 둔다 — `File` 객체는 zod 가 검증할 것이 없고, 이미 저장된 사진과
-    방금 고른 사진을 한 목록으로 다뤄야 해서 첨부판이 쓰는 모양 그대로 든다.
-  */
-  const [photos, setPhotos] = useState<UploadFile[]>(() => toUploadFiles(asset?.photos ?? []));
 
   const regionCode = useWatch({ control: methods.control, name: 'regionCode' });
   const address = useWatch({ control: methods.control, name: 'address' });
@@ -94,61 +85,53 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
     createPlant({
       plantId: created,
       powerPlantId: PLANT_NO_BASE + SCHOOLS.length + plantCreated.length + 1,
-      plantName: values.powerPlantName,
+      plantName: values.plantName,
       regionCode: values.regionCode,
       address: values.address,
       addressDetail: values.addressDetail.trim(),
-      latitude: values.latitude,
-      longitude: values.longitude,
-      rtuEntName: values.rtuEnterpriseName,
-      builder: { name: values.installerName.trim(), phone: values.installerPhone.trim() },
+      latitude: Number(values.latitude),
+      longitude: Number(values.longitude),
+      rtuEntName: values.rtuEntName,
+      builder: { name: values.builderName.trim(), phone: values.builderPhone.trim() },
       managerEnterprise: {
         name: values.managerEnterpriseName.trim(),
         phone: values.managerEnterprisePhone.trim(),
       },
-      userId: values.userId,
+      userId: toId(values.userId),
       // 일사량계는 일사량계 탭에서 따로 세운 뒤 이 발전소를 골라 잇는다.
       irradId: null,
-      plantType: values.powerPlantType,
+      plantType: values.plantType,
       etc: values.etc.trim(),
-      photos: toPhotos(photos, created),
     }, entryOf(
-      { id: created, name: values.powerPlantName },
+      { id: created, name: values.plantName },
       '신규 등록',
       '—',
-      `${values.powerPlantType} · ${regionNameOfCode(values.regionCode)}`,
+      `${values.plantType} · ${regionNameOfCode(values.regionCode)}`,
     ));
 
-    toast.success(MSG.createSuccess(values.powerPlantName));
+    toast.success(MSG.createSuccess(values.plantName));
     navigate(backTo);
   };
 
   const update = (values: PlantFormValues) => {
     if (!asset) return;
 
-    /*
-      API 가 붙으면 새로 고른 것은 `fileList` part 로, 뺀 것은 `removeFileList` 로 나간다.
-      목업은 남은 목록을 통째로 다시 지어 넣는다 — `File` 객체는 스토어에 넣지 않는다.
-    */
-    const nextPhotos = toPhotos(photos, asset.plantId);
-
     const next: Partial<PlantAsset> = {
-      photos: nextPhotos,
-      plantName: values.powerPlantName,
-      plantType: values.powerPlantType,
+      plantName: values.plantName,
+      plantType: values.plantType,
       regionCode: values.regionCode,
       address: values.address,
       addressDetail: values.addressDetail.trim(),
-      latitude: values.latitude,
-      longitude: values.longitude,
-      rtuEntName: values.rtuEnterpriseName,
-      builder: { name: values.installerName.trim(), phone: values.installerPhone.trim() },
+      latitude: Number(values.latitude),
+      longitude: Number(values.longitude),
+      rtuEntName: values.rtuEntName,
+      builder: { name: values.builderName.trim(), phone: values.builderPhone.trim() },
       managerEnterprise: {
         name: values.managerEnterpriseName.trim(),
         phone: values.managerEnterprisePhone.trim(),
       },
-      userId: values.userId,
-      irradId: values.irradId,
+      userId: toId(values.userId),
+      irradId: toId(values.irradId),
       etc: values.etc.trim(),
     };
 
@@ -164,11 +147,9 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
       ['시공 업체 연락처', asset.builder.phone, next.builder?.phone ?? ''],
       ['담당 업체', asset.managerEnterprise.name || '—', next.managerEnterprise?.name || '—'],
       ['담당 업체 연락처', asset.managerEnterprise.phone || '—', next.managerEnterprise?.phone || '—'],
-      ['사용자', nameOfUser(asset.userId), nameOfUser(values.userId)],
-      ['연결 일사량계', irradNameOf(asset.irradId), irradNameOf(values.irradId)],
+      ['사용자', nameOfUser(asset.userId), nameOfUser(toId(values.userId))],
+      ['연결 일사량계', irradNameOf(asset.irradId), irradNameOf(toId(values.irradId))],
       ['비고', asset.etc || '—', next.etc || '—'],
-      // 장수만 견주면 같은 장수로 갈아 끼운 것을 놓쳐 저장 자체가 거부된다.
-      ['현장 사진', photoNames(asset.photos) || '—', photoNames(nextPhotos) || '—'],
     ]
       .filter(([, before, after]) => before !== after)
       .map(([field, before, after]) => entryOf(plant, field, before, after));
@@ -222,16 +203,10 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
             hint={isNew ? undefined : `발전소 ID ${asset.powerPlantId}`}
           >
             <FormRow cols={2}>
-              <Form.Text
-                label="발전소 이름"
-                name="powerPlantName"
-                placeholder="예: 온양초등학교"
-                maxLength={NAME_MAX}
-                required
-              />
+              <Form.Text label="발전소 이름" name="plantName" placeholder="예: 온양초등학교" maxLength={120} required />
               <Form.Select
                 label="구분"
-                name="powerPlantType"
+                name="plantType"
                 options={SCHOOL_LEVELS.map((item) => ({ value: item, label: item }))}
               />
             </FormRow>
@@ -255,8 +230,8 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
                       onSelect({
                         address: picked.roadAddress,
                         regionCode: picked.sigunguCode,
-                        latitude: point ? point.lat : Number.NaN,
-                        longitude: point ? point.lng : Number.NaN,
+                        latitude: point ? String(point.lat) : '',
+                        longitude: point ? String(point.lng) : '',
                       });
                     }}
                   />
@@ -266,25 +241,25 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
             </FormRow>
             <FormRow cols={2}>
               {/* 주소를 고르면 채워진다. 옥상이 아닌 부지는 지도에서 어긋나므로 손으로 보정한다. */}
-              <Form.Number label="위도" name="latitude" hint="지도 마커가 서는 자리" step={0.000001} required />
-              <Form.Number label="경도" name="longitude" hint="주소를 고르면 채워집니다" step={0.000001} required />
+              <Form.Text label="위도" name="latitude" hint="지도 마커가 서는 자리" ime="numeric" required />
+              <Form.Text label="경도" name="longitude" hint="주소를 고르면 채워집니다" ime="numeric" required />
             </FormRow>
           </FormSection>
 
           <FormSection legend="업체" hint="연락처는 고장 대응 시 바로 쓰입니다.">
             <FormRow cols={2}>
-              <Form.Text label="RTU업체" name="rtuEnterpriseName" maxLength={NAME_MAX} required />
-              <Form.Text label="시공업체" name="installerName" maxLength={NAME_MAX} optional />
+              <Form.Text label="RTU업체" name="rtuEntName" maxLength={120} required />
+              <Form.Text label="시공업체" name="builderName" maxLength={120} optional />
             </FormRow>
             <FormRow cols={2}>
               <Form.Text
                 label="시공업체 연락처"
-                name="installerPhone"
+                name="builderPhone"
                 transform={formatPhone}
                 ime="numeric"
                 optional
               />
-              <Form.Text label="담당업체" name="managerEnterpriseName" maxLength={NAME_MAX} optional />
+              <Form.Text label="담당업체" name="managerEnterpriseName" maxLength={120} optional />
             </FormRow>
             <FormRow cols={2}>
               <Form.Text
@@ -316,7 +291,7 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
                     <RecordPicker
                       rows={users}
                       getRowKey={(row) => String(row.userId)}
-                      selectedKey={String(userId)}
+                      selectedKey={userId}
                       caption="사용자 목록. ID, 사용자, 로그인 ID, 이메일 순입니다."
                       placeholder="이름·로그인 ID·이메일로 검색"
                       match={(row, word) => row.name.includes(word)
@@ -335,7 +310,7 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
                           render: (row) => row.email,
                         },
                       ]}
-                      onPick={(row) => onSelect({ userId: row.userId, userLabel: userLabelOf(row) })}
+                      onPick={(row) => onSelect({ userId: String(row.userId), userLabel: userLabelOf(row) })}
                     />
                   </Modal>
                 )}
@@ -359,7 +334,7 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
                       <RecordPicker
                         rows={ownIrrads}
                         getRowKey={(row) => String(row.irradId)}
-                        selectedKey={String(irradId ?? '')}
+                        selectedKey={irradId}
                         caption="일사량계 목록. ID, 이름, RTU 통신 ID 순입니다."
                         placeholder="이름·RTU 통신 ID로 검색"
                         emptyTitle="이 발전소에 등록된 일사량계가 없습니다"
@@ -371,7 +346,7 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
                           { key: 'name', header: '일사량계 이름', render: (row) => row.name },
                           { key: 'comm', header: 'RTU 통신 ID', width: '160px', render: (row) => row.rtuCommId },
                         ]}
-                        onPick={(row) => onSelect({ irradId: row.irradId, irradLabel: irradLabelOf(row) })}
+                        onPick={(row) => onSelect({ irradId: String(row.irradId), irradLabel: irradLabelOf(row) })}
                       />
                     </Modal>
                   )}
@@ -383,20 +358,6 @@ export function PlantEditor({ powerPlantId }: { powerPlantId: number | null }) {
               name="etc"
               optional
               placeholder="점검 주기, 접근 경로처럼 담당자가 알아야 할 내용"
-            />
-          </FormSection>
-
-          <FormSection
-            legend="현장 사진"
-            hint={`설치 현장을 찍은 대표이미지입니다. ${PHOTO_MAX_COUNT}장까지, 없어도 저장됩니다.`}
-          >
-            <FileUpload
-              label="사진 올리기"
-              value={photos}
-              onChange={setPhotos}
-              maxCount={PHOTO_MAX_COUNT}
-              hint={`사진 ${PHOTO_MAX_COUNT}장까지, 한 장에 5MB 까지 올릴 수 있습니다.`}
-              onError={(message) => toast.error(message)}
             />
           </FormSection>
 

@@ -1,71 +1,73 @@
 import { z } from 'zod';
 import { MSG } from '@/configs/messages';
-import { ZodInverterTypeCode, ZodPhaseTypeCode } from '@/configs/codes';
-import { pagingParamsSchema } from '@/service/common';
+import { pagingRequest } from '@/service/common';
 
 /** 인버터 용량 범위(kW) */
 export const CAPACITY_MIN = 0;
 export const CAPACITY_MAX = 5000;
 
-export const NAME_MAX = 120;
-
-/** 검색어는 인버터명·업체명을 훑는다 */
-export type ManageInverterPageParams = z.infer<typeof manageInverterPageParamsSchema>;
-export const manageInverterPageParamsSchema = pagingParamsSchema.extend({
+/** 검색어는 인버터 이름·업체 이름을 함께 훑는다 */
+export const inverterListRequestSchema = pagingRequest.extend({
   keyword: z.string().optional(),
-  inverterTypeCode: ZodInverterTypeCode.CODE.optional(),
+  /** 스트링 인버터만 고를 때처럼 타입으로 좁힐 때 (inverterTypeCode) */
+  inverterTypeCode: z.number().int().optional(),
 });
 
-export type ManageInverterPage = z.infer<typeof manageInverterPageSchema>;
-export const manageInverterPageSchema = z.object({
+export const inverterListRowSchema = z.object({
   inverterId: z.number().int(),
-  inverterName: z.string(),
-  inverterEnterpriseName: z.string(),
-  inverterCapacity: z.number(),
-  inverterTypeCode: ZodInverterTypeCode.CODE,
-  inverterTypeName: ZodInverterTypeCode.NAME,
-  phaseTypeCode: ZodPhaseTypeCode.CODE,
-  phaseTypeName: ZodPhaseTypeCode.NAME,
+  /** 인버터 모델명 (inverterTerm) */
+  name: z.string(),
+  /** 인버터 업체명 (inverterEntName) */
+  maker: z.string(),
+  /** 인버터 용량(kW) (inverterCapa) */
+  inverterCapa: z.number(),
+  inverterTypeCode: z.number().int(),
+  /** 위상 종류 코드 (phaseTypeCode) */
+  phaseTypeCode: z.number().int(),
 });
 
-export type ManageInverterDetailParams = z.infer<typeof manageInverterDetailParamsSchema>;
-export const manageInverterDetailParamsSchema = z.object({
-  inverterId: z.number().int(),
-});
-
-export type ManageInverterDetail = z.infer<typeof manageInverterDetailSchema>;
-export const manageInverterDetailSchema = manageInverterPageSchema;
-
-/**
- * 등록 요청 한 벌. 검증 규칙을 여기 두는 것은 이 스키마가 곧 폼이 지키는 계약이기 때문이다.
- */
-export type ManageInverterAddParams = z.infer<typeof manageInverterAddSchema>;
-export const manageInverterAddSchema = z.object({
-  inverterName: z.string().trim().min(1, MSG.requiredField('인버터 이름')).max(NAME_MAX, MSG.tooLong('인버터 이름', NAME_MAX)),
-  inverterEnterpriseName: z.string().trim().min(1, MSG.requiredField('업체 이름')).max(NAME_MAX, MSG.tooLong('업체 이름', NAME_MAX)),
-  inverterCapacity: z
-    .number(MSG.numberRange('인버터 용량', CAPACITY_MIN, CAPACITY_MAX))
-    .gt(CAPACITY_MIN, MSG.numberRange('인버터 용량', CAPACITY_MIN, CAPACITY_MAX))
-    .max(CAPACITY_MAX, MSG.numberRange('인버터 용량', CAPACITY_MIN, CAPACITY_MAX)),
-  inverterTypeCode: ZodInverterTypeCode.CODE,
-  phaseTypeCode: ZodPhaseTypeCode.CODE,
-});
-
-export type ManageInverterModifyParams = z.infer<typeof manageInverterModifySchema>;
-export const manageInverterModifySchema = manageInverterAddSchema.extend({
+export const inverterDetailRequestSchema = z.object({
   inverterId: z.number().int(),
 });
 
-export type ManageInverterRemoveParams = z.infer<typeof manageInverterRemoveParamsSchema>;
-export const manageInverterRemoveParamsSchema = z.object({
+export const inverterDetailResponseSchema = z.object({
+  inverterId: z.number().int(),
+  name: z.string(),
+  maker: z.string(),
+  inverterCapa: z.number(),
+  inverterTypeCode: z.number().int(),
+  phaseTypeCode: z.number().int(),
+});
+
+/** `inverterId` 가 있으면 수정, 없으면 등록 */
+export const inverterSaveRequestSchema = inverterDetailResponseSchema.partial({ inverterId: true });
+
+export const inverterDeleteRequestSchema = z.object({
   inverterId: z.number().int(),
 });
+
+export type InverterListRequest = z.infer<typeof inverterListRequestSchema>;
+export type InverterListRow = z.infer<typeof inverterListRowSchema>;
+export type InverterDetailRequest = z.infer<typeof inverterDetailRequestSchema>;
+export type InverterDetailResponse = z.infer<typeof inverterDetailResponseSchema>;
+export type InverterSaveRequest = z.infer<typeof inverterSaveRequestSchema>;
+export type InverterDeleteRequest = z.infer<typeof inverterDeleteRequestSchema>;
 
 // ── 폼 ─────────────────────────────────────────────────────
 
 /**
  * 인버터 제품 등록·수정 폼 (SFR-017-04).
- * 요청 스키마를 그대로 쓴다 — 서버 번호(`inverterId`)는 폼이 만지는 값이 아니라 여기 없다.
+ * 서버 번호(`inverterId`)는 폼이 만지는 값이 아니라 여기 없다 — 저장할 때 다시 얹는다.
  */
+export const inverterFormSchema = z.object({
+  maker: z.string().trim().min(1, MSG.requiredField('업체 이름')).max(120, MSG.tooLong('업체 이름', 120)),
+  name: z.string().trim().min(1, MSG.requiredField('인버터 이름')).max(120, MSG.tooLong('인버터 이름', 120)),
+  capacityKw: z
+    .number(MSG.numberRange('인버터 용량', CAPACITY_MIN, CAPACITY_MAX))
+    .gt(CAPACITY_MIN, MSG.numberRange('인버터 용량', CAPACITY_MIN, CAPACITY_MAX))
+    .max(CAPACITY_MAX, MSG.numberRange('인버터 용량', CAPACITY_MIN, CAPACITY_MAX)),
+  kind: z.enum(['string', 'central', 'micro']),
+  phase: z.enum(['단상', '삼상']),
+});
+
 export type InverterFormValues = z.infer<typeof inverterFormSchema>;
-export const inverterFormSchema = manageInverterAddSchema;

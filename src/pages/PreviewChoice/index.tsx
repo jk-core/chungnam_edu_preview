@@ -1,63 +1,94 @@
 import { Link } from 'react-router-dom';
+import { EDU_LEVEL_LABEL, EDU_LEVELS } from '@/mocks/eduContent';
 import { Logo } from '@/components/layout/Logo';
 import { PATH } from '@/routes/routes';
+import { cn } from '@/utils/cn';
 import styles from './PreviewChoice.module.scss';
 
 /**
- * 시연에서 열 수 있는 화면 (2026-09-16 지시).
+ * 통합관제 상황판 시안 다섯.
  *
- * 줄 하나가 화면 갈래 하나다. 갈래 안에서 시안을 고르는 일은 **한 줄 안에서** 끝난다 —
- * 카드를 갈래마다 여러 장 늘어놓았더니 통합관제 카드와 교육용 카드가 같은 크기로 섞여,
- * 무엇이 갈래이고 무엇이 그 안의 시안인지 한 번 더 세어야 했다.
- *
- * 설명을 적지 않는다. 이 화면이 하는 일은 「어디로 갈지 고르는 것」 하나뿐이고, 시연을 여는
- * 사람은 이미 무엇이 무엇인지 알고 온다. 설명을 달면 고르는 자리가 그만큼 뒤로 밀린다.
+ * 값도 판도 다섯이 모두 같고 **어디에 세우는가** 와 **무슨 색으로 보이는가** 만 갈린다
+ * (`ControlRoom/drafts`). 그 차이는 열어서 봐야 보이는 것이라 이름만 적는다.
  */
-const GROUPS = [
-  {
-    kind: '통합관제',
-    links: [
-      { label: 'A', to: PATH.CONTROL },
-      { label: 'B', to: PATH.CONTROL_B },
-      { label: 'C', to: PATH.CONTROL_C },
-    ],
-  },
-  {
-    kind: '교육용 대시보드',
-    links: [
-      { label: 'A', to: PATH.SOLAR_EDU_A },
-      { label: 'B', to: PATH.SOLAR_EDU_B },
-      { label: 'C', to: PATH.SOLAR_EDU_C },
-    ],
-  },
-  {
-    kind: '관리자 콘솔',
-    links: [{ label: '열기', to: PATH.ADMIN_PLANTS }],
-  },
-];
+const CONTROL_DRAFTS = [PATH.CONTROL, PATH.CONTROL_B, PATH.CONTROL_C, PATH.CONTROL_D, PATH.CONTROL_E];
 
+/** 교육용 대시보드 시안 셋. 눈높이(초·중·고)와는 다른 축이라 셋 각각이 눈높이 셋을 갖는다. */
+const EDU_DRAFTS = [PATH.SOLAR_EDU_A, PATH.SOLAR_EDU_B, PATH.SOLAR_EDU_C];
+
+/** `/solar-edu/a` → `시안 a`. 시안 이름은 주소 끝자락이 그대로 말해 준다. */
+function draftName(path: string): string {
+  const tail = path.split('/').pop() ?? '';
+
+  // 시안 a 만 이름 없이 `/control` 로 선다.
+  return `시안 ${/^[a-e]$/.test(tail) ? tail : 'a'}`;
+}
+
+/**
+ * 시연용 화면 고르개 (2026-09-09 지시).
+ *
+ * 이 브랜치는 시연을 위해 통합관제와 교육용 대시보드만 열어 두었다. 막아 둔 주소로 들어오면
+ * 모두 이 화면으로 모이므로, 시연 중에 주소를 잘못 짚어도 빈 화면이나 로그인 화면을 만나지 않는다.
+ *
+ * 시연이 끝나면 이 화면과 `routesList` 의 시연용 목록을 함께 걷는다.
+ */
 export default function PreviewChoicePage() {
   return (
     <main className={styles.choice}>
       <header className={styles.choice__head}>
         <Logo size="lg" />
+        <p className={styles.choice__note}>시연에서 볼 화면을 고르세요</p>
       </header>
 
-      <ul className={styles.list}>
-        {GROUPS.map((group) => (
-          <li key={group.kind} className={styles.row}>
-            <span className={styles.row__kind}>{group.kind}</span>
+      <div className={styles.choice__groups}>
+        {/*
+          갈래 이름은 카드가 아니라 줄 머리에 적는다. 같은 줄의 카드가 모두 같은 갈래라,
+          카드마다 적으면 다섯 번 되풀이되면서 정작 카드끼리 무엇이 다른지가 묻힌다.
+        */}
+        <section className={styles.group}>
+          <h2 className={styles.group__title}>통합관제</h2>
 
-            <span className={styles.row__links}>
-              {group.links.map((link) => (
-                <Link key={link.to} className={styles.go} to={link.to}>
-                  {link.label}
+          <ul className={styles.group__list}>
+            {CONTROL_DRAFTS.map((to) => (
+              <li key={to}>
+                <Link className={cn(styles.card, styles['card--link'])} to={to}>
+                  <span className={styles.card__name}>{draftName(to)}</span>
+                  <span className={styles.card__go} aria-hidden="true">열기 →</span>
                 </Link>
-              ))}
-            </span>
-          </li>
-        ))}
-      </ul>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/*
+          교육용은 카드가 통째로 링크가 아니다.
+
+          시안(어떻게 늘어놓는가)과 눈높이(무엇을 말하는가)는 서로 다른 축이라 곱하면 아홉 가지가
+          되는데, 아홉 장을 늘어놓으면 정작 견주어야 할 시안 셋이 묻힌다. 그래서 카드는 시안으로
+          두고 눈높이는 그 안에서 고르게 한다 — 누르는 횟수는 어느 쪽이나 한 번으로 같다.
+        */}
+        <section className={styles.group}>
+          <h2 className={styles.group__title}>교육용 대시보드</h2>
+
+          <ul className={styles.group__list}>
+            {EDU_DRAFTS.map((to) => (
+              <li key={to}>
+                <div className={styles.card}>
+                  <span className={styles.card__name}>{draftName(to)}</span>
+
+                  <div className={styles.card__levels}>
+                    {EDU_LEVELS.map((level) => (
+                      <Link key={level} className={styles.card__level} to={`${to}?level=${level}`}>
+                        {EDU_LEVEL_LABEL[level]}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }

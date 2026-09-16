@@ -11,31 +11,32 @@ import type { EquipmentRow } from '../hooks/useEquipmentRows';
 const AS_YEARS = 5;
 
 export const EMPTY_VALUES: EquipmentFormValues = {
-  // 빈 숫자 칸은 NaN 이다 — 0 은 「0번 발전소」·「모듈 0장」이라는 뜻이 되어 버린다.
-  userId: Number.NaN,
+  userId: '',
   userLabel: '',
-  powerPlantId: Number.NaN,
-  powerPlantLabel: '',
-  equipmentName: '',
-  rtuCommunicationId: '',
+  plantId: '',
+  plantLabel: '',
+  name: '',
+  rtuCommId: '',
   rtuPort: null,
-  inverterId: Number.NaN,
+  inverterProductId: '',
   inverterLabel: '',
   inverterKind: '',
-  moduleId: Number.NaN,
+  moduleProductId: '',
   moduleLabel: '',
   azimuth: 180,
-  inclinedAngle: 20,
-  moduleSerialCount: Number.NaN,
-  moduleParallelCount: Number.NaN,
-  moduleSerialCountSecond: 0,
-  moduleParallelCountSecond: 0,
+  inclineAngle: 20,
+  // 빈 숫자 칸은 NaN 이다 — 0 은 「모듈 0장」이라는 뜻이 되어 버린다.
+  series1: Number.NaN,
+  parallel1: Number.NaN,
+  series2: 0,
+  parallel2: 0,
   equipmentCapacity: Number.NaN,
-  asExpiryDate: NOW.add(AS_YEARS, 'year').format('YYYY-MM-DD'),
-  etc: '',
-  installDate: NOW.format('YYYY-MM-DD'),
+  asExpiresAt: NOW.add(AS_YEARS, 'year').format('YYYY-MM-DD'),
+  note: '',
+  installedAt: NOW.format('YYYY-MM-DD'),
+  operatedAt: '',
   rows: [],
-  takenNumbers: [],
+  takenSeqs: [],
 };
 
 export function userLabelOf(user: ManagedUser): string {
@@ -48,11 +49,11 @@ export function moduleLabelOf(product: ModuleProduct): string {
 
 function toStringRows(strings: StringMaster[]): StringRow[] {
   return strings.map((row) => ({
-    stringId: row.stringId,
-    stringNumber: row.seq,
-    stringName: row.name,
-    moduleSerialCount: row.seriesCount,
-    moduleParallelCount: row.parallelCount,
+    id: row.id,
+    seq: row.seq,
+    name: row.name,
+    seriesCount: row.seriesCount,
+    parallelCount: row.parallelCount,
   }));
 }
 
@@ -71,30 +72,31 @@ export function toFormValues(target: EquipmentRow, sources: Sources): EquipmentF
   const module = sources.modules.find((item) => item.id === target.moduleProductId);
 
   return {
-    userId: target.userId ?? Number.NaN,
+    userId: target.userId === null ? '' : String(target.userId),
     userLabel: user ? userLabelOf(user) : '',
-    powerPlantId: plant?.powerPlantId ?? Number.NaN,
-    powerPlantLabel: plant?.plantName ?? '',
-    equipmentName: target.name,
-    rtuCommunicationId: target.rtuCommId,
+    plantId: target.plantId,
+    plantLabel: plant?.plantName ?? '',
+    name: target.name,
+    rtuCommId: target.rtuCommId,
     rtuPort: target.rtuPort,
-    inverterId: inverter?.inverterId ?? Number.NaN,
+    inverterProductId: target.inverterProductId,
     inverterLabel: describeInverterProduct(inverter),
     inverterKind: inverter?.kind ?? '',
-    moduleId: module?.moduleId ?? Number.NaN,
+    moduleProductId: target.moduleProductId,
     moduleLabel: module ? moduleLabelOf(module) : '',
     azimuth: target.azimuth,
-    inclinedAngle: target.inclineAngle,
-    moduleSerialCount: target.series1,
-    moduleParallelCount: target.parallel1,
-    moduleSerialCountSecond: target.series2,
-    moduleParallelCountSecond: target.parallel2,
+    inclineAngle: target.inclineAngle,
+    series1: target.series1,
+    parallel1: target.parallel1,
+    series2: target.series2,
+    parallel2: target.parallel2,
     equipmentCapacity: target.equipmentCapacity,
-    asExpiryDate: target.asExpiresAt,
-    etc: target.note,
-    installDate: target.installedAt,
+    asExpiresAt: target.asExpiresAt,
+    note: target.note,
+    installedAt: target.installedAt,
+    operatedAt: target.operatedAt,
     rows: toStringRows(sources.strings),
     // 편집판이 곧 이 설비의 전체 목록이라 피할 순번이 없다.
-    takenNumbers: [],
+    takenSeqs: [],
   };
 }

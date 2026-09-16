@@ -8,9 +8,8 @@ import { createdEntry, deletedEntry, diffEntries } from '@/pages/Admin/_shared/c
 import { createForm, FormRow, FormSection } from '@/components/common/Form';
 import { formatNumber } from '@/utils/format';
 import { FormPage } from '@/pages/Admin/_shared/FormPage';
-import { INVERTER_KIND_LABEL, kindFromInverterTypeCode } from '@/mocks/deviceMaster';
-import { INVERTER_TYPE, PHASE_TYPE } from '@/configs/codes';
-import { CAPACITY_MAX, CAPACITY_MIN, inverterFormSchema, NAME_MAX } from '@/service/inverter/type';
+import { INVERTER_KIND_LABEL } from '@/mocks/deviceMaster';
+import { CAPACITY_MAX, CAPACITY_MIN, inverterFormSchema } from '@/service/inverter/type';
 import { listPath } from '@/pages/Admin/_shared/adminPath';
 import { MSG } from '@/configs/messages';
 import { toast } from '@/stores/toastStore';
@@ -18,8 +17,11 @@ import { useAuthUser } from '@/stores/authStore';
 import { useInverterProducts } from '@/pages/Admin/_shared/device/useSelectableEquipment';
 import useEquipmentStore, { mergeEquipment } from '@/stores/equipmentStore';
 import type { InverterFormValues } from '@/service/inverter/type';
-import type { InverterProduct } from '@/interface/deviceMaster';
-import { EMPTY_VALUES, phaseFromCode, toFormValues } from './values';
+import type { InverterKind, InverterProduct } from '@/interface/deviceMaster';
+import { EMPTY_VALUES, toFormValues } from './values';
+
+const KIND_OPTIONS = (Object.keys(INVERTER_KIND_LABEL) as InverterKind[])
+  .map((value) => ({ value, label: INVERTER_KIND_LABEL[value] }));
 
 const Form = createForm<InverterFormValues>();
 
@@ -64,13 +66,9 @@ export function InverterEditor({ inverterId }: InverterEditorProps) {
 
   const commit = (values: InverterFormValues) => {
     const saved: InverterProduct = {
+      ...values,
       id: target?.id ?? nextId('INVP'),
       inverterId: target?.inverterId ?? nextSeq(),
-      maker: values.inverterEnterpriseName,
-      name: values.inverterName,
-      capacityKw: values.inverterCapacity,
-      kind: kindFromInverterTypeCode(values.inverterTypeCode),
-      phase: phaseFromCode(values.phaseTypeCode),
     };
     const logTarget = { targetType: 'inverter' as const, id: saved.id, name: saved.name, actor: actor?.name ?? '관리자' };
 
@@ -125,13 +123,13 @@ export function InverterEditor({ inverterId }: InverterEditorProps) {
         >
           <FormSection legend="제품 정보">
             <FormRow cols={2}>
-              <Form.Text label="업체 이름" name="inverterEnterpriseName" maxLength={NAME_MAX} required />
-              <Form.Text label="인버터 이름" name="inverterName" maxLength={NAME_MAX} ime="latin" required />
+              <Form.Text label="업체 이름" name="maker" maxLength={120} required />
+              <Form.Text label="인버터 이름" name="name" maxLength={120} ime="latin" required />
             </FormRow>
             <FormRow cols={2}>
               <Form.Number
                 label="인버터 용량"
-                name="inverterCapacity"
+                name="capacityKw"
                 min={CAPACITY_MIN}
                 max={CAPACITY_MAX}
                 step={0.1}
@@ -139,19 +137,14 @@ export function InverterEditor({ inverterId }: InverterEditorProps) {
                 placeholder={`${CAPACITY_MIN} ~ ${CAPACITY_MAX}`}
                 required
               />
-              <Form.Select
-                label="인버터 타입"
-                name="inverterTypeCode"
-                options={Object.entries(INVERTER_TYPE.NAME)
-                  .map(([code, label]) => ({ value: Number(code), label }))}
-              />
+              <Form.Select label="인버터 타입" name="kind" options={KIND_OPTIONS} />
             </FormRow>
             <Form.Radio
               label="위상 종류"
-              name="phaseTypeCode"
+              name="phase"
               options={[
-                { value: PHASE_TYPE.CODE.단상, label: '단상' },
-                { value: PHASE_TYPE.CODE.삼상, label: '삼상' },
+                { value: '단상', label: '단상' },
+                { value: '삼상', label: '삼상' },
               ]}
               required
             />
@@ -161,7 +154,7 @@ export function InverterEditor({ inverterId }: InverterEditorProps) {
 
       <ConfirmDialog
         isOpen={pending !== null}
-        title={isNew ? MSG.createConfirm('인버터 제품') : MSG.updateConfirm(pending?.inverterName ?? '인버터 제품')}
+        title={isNew ? MSG.createConfirm('인버터 제품') : MSG.updateConfirm(pending?.name ?? '인버터 제품')}
         confirmLabel="저장"
         onConfirm={() => pending && commit(pending)}
         onClose={() => setPending(null)}

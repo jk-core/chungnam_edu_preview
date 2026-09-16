@@ -1,10 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { CloseIcon, FileIcon, UploadIcon } from '@/components/common/Icon';
 import { MSG } from '@/configs/messages';
 import { Modal } from '@/components/common/Modal';
 import { PHOTO_ACCEPT } from '@/configs/upload';
 import { formatNumber } from '@/utils/format';
-import type { FileToRemove } from '@/service/common';
 import styles from './Form.module.scss';
 
 export interface UploadFile {
@@ -12,12 +11,8 @@ export interface UploadFile {
   name: string;
   size: number;
   type: string;
-  /** 새로 고른 것은 objectURL(이미지일 때만), 이미 저장된 것은 서버 주소 */
+  /** 이미지일 때만 채워진다. objectURL 이라 정리해 줘야 한다. */
   previewUrl: string | null;
-  /** 새로 고른 파일. 멀티파트에 이것을 싣는다 — 이미 저장된 것은 없다 */
-  file: File | null;
-  /** 이미 저장된 첨부를 가리키는 짝. 새로 고른 것은 없다 */
-  saved: FileToRemove | null;
 }
 
 interface FileUploadProps {
@@ -50,25 +45,12 @@ export function FileUpload({
   const inputId = useId();
   const [preview, setPreview] = useState<UploadFile | null>(null);
 
-  /*
-    objectURL 은 직접 놓아 주어야 메모리에 남지 않는다.
-
-    놓아 줄 대상을 ref 에 담아 두고 **떠날 때 한 번만** 비우는 것은, 의존성을 `value` 로 두면
-    배열이 바뀔 때마다 정리가 돌아 **아직 목록에 남아 있는 사진의 URL 까지 끊기기** 때문이다 —
-    둘째 장을 올리면 첫 장이 깨졌다. 지우는 자리(`remove`)가 그 한 장을 따로 놓아 준다.
-    서버 주소(`file === null`)는 우리가 만든 것이 아니라 건드리지 않는다.
-  */
-  const created = useRef<string[]>([]);
-
-  useEffect(() => {
-    created.current = value
-      .filter((item) => item.file !== null && item.previewUrl !== null)
-      .map((item) => item.previewUrl as string);
-  }, [value]);
-
+  // objectURL 은 직접 놓아 주어야 메모리에 남지 않는다.
   useEffect(() => () => {
-    created.current.forEach((url) => URL.revokeObjectURL(url));
-  }, []);
+    value.forEach((file) => {
+      if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
+    });
+  }, [value]);
 
   const accept0 = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -98,8 +80,6 @@ export function FileUpload({
         size: file.size,
         type: file.type,
         previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-        file,
-        saved: null,
       };
     });
 
@@ -107,12 +87,11 @@ export function FileUpload({
   };
 
   const remove = (id: string) => {
-    const target = value.find((item) => item.id === id);
+    const target = value.find((file) => file.id === id);
 
-    // 우리가 만든 objectURL 만 놓아 준다 — 서버 주소를 끊으면 되돌릴 수 없다.
-    if (target?.file && target.previewUrl) URL.revokeObjectURL(target.previewUrl);
+    if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
 
-    onChange(value.filter((item) => item.id !== id));
+    onChange(value.filter((file) => file.id !== id));
   };
 
   return (

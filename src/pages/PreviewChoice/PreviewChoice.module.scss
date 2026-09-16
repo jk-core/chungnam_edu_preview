@@ -12,7 +12,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: s.$space-8;
   min-height: 100vh;
   padding: s.$space-9 s.$space-6;
@@ -21,91 +20,159 @@
     var(--surface-sunken);
 
   &__head {
+    /*
+      위아래 여백을 자동으로 나눠 가운데에 세운다.
+
+      `justify-content: center` 로 세우지 않는다 — 갈래가 늘어 세로가 화면보다 길어지면
+      그 방식은 위쪽을 잘라 내고, 잘린 자리는 스크롤로도 닿지 않는다.
+    */
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: s.$space-3;
+    margin-top: auto;
+    text-align: center;
+  }
+
+  &__note {
+    @include t.body-lg;
+
+    margin: 0;
+    color: var(--text-muted);
+  }
+
+  &__groups {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-7;
+    width: 100%;
+    max-width: 1440px;
+    margin-bottom: auto;
   }
 }
 
-/* 줄 셋 — 갈래마다 한 줄이다 */
-.list {
+/* 갈래 하나가 한 줄이다 — 통합관제 다섯, 교육용 셋. */
+.group {
   display: flex;
   flex-direction: column;
-  gap: s.$space-4;
-  width: 100%;
-  max-width: 560px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: s.$space-3;
+
+  &__title {
+    @include t.eyebrow;
+
+    color: var(--brand-contrast);
+  }
+
+  /*
+    카드 폭을 줄마다 같게 둔다.
+
+    `auto-fill` 이라 갈래에 카드가 셋뿐이어도 남은 트랙이 접히지 않는다 — `auto-fit` 으로
+    두면 그 셋이 줄 전체를 나눠 가지면서 위 줄의 다섯 장보다 뚱뚱해지고, 갈래마다 카드 크기가
+    달라 무엇이 더 중한 것처럼 읽힌다.
+
+    열 수는 폭이 정한다. 1440px 를 다 쓰면 다섯 열이고, 좁아지면 넷·셋·둘로 접히다가
+    폰에서는 한 줄에 한 장이 된다. `min()` 은 카드 최소 폭보다 좁은 화면에서 넘치지 않게 한다.
+  */
+  &__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+    gap: s.$space-4;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 }
 
 /*
-  갈래 한 줄.
+  카드 한 장이 갈 곳 하나다.
 
-  이름은 왼쪽 끝에, 시안 단추는 오른쪽 끝에 붙인다. 가운데로 모으면 갈래마다 이름 길이가
-  달라(「통합관제」 와 「교육용 대시보드」) 단추의 세로줄이 어긋난다 — 눈이 아래로 훑을 때
-  단추가 같은 자리에 있어야 셋을 한 묶음으로 센다.
+  통합관제 카드는 통째로 링크다 — 시연 자리에서 누르는 사람은 카드를 겨냥하지 그 안의 작은
+  글자를 겨냥하지 않는다. 「열기」 는 누를 곳이 아니라 누르면 무슨 일이 나는지를 적은 표시다.
+
+  교육용 카드는 갈 곳이 눈높이마다 갈려 통째로 링크가 될 수 없다. 그래서 뜨는 결
+  (`--link`)만 통합관제 쪽에 두고, 상자 자체는 두 갈래가 함께 쓴다 — 줄이 달라도 카드가
+  같은 물건으로 보여야 한다.
 */
-.row {
+.card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: s.$space-5;
-  padding: s.$space-4 s.$space-5;
+  flex-direction: column;
+  gap: s.$space-2;
+  height: 100%;
+  padding: s.$space-6;
   border: 1px solid var(--border-subtle);
   border-radius: s.$radius-lg;
   background-color: var(--surface);
-  box-shadow: var(--shadow-sm);
+  text-decoration: none;
 
-  &__kind {
-    @include t.title-sm;
+  &--link {
+    transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+
+    &:hover {
+      border-color: var(--brand);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    @include media.reduced-motion {
+      transition: none;
+
+      &:hover {
+        transform: none;
+      }
+    }
+  }
+
+  &__name {
+    @include t.title-lg;
 
     color: var(--text-strong);
   }
 
-  &__links {
-    display: inline-flex;
+  &__go {
+    @include t.label-sm;
+
+    margin-top: s.$space-2;
+    color: var(--brand);
+  }
+
+  /* 눈높이 셋. 「열기」 가 서던 자리에 같은 높이로 선다 */
+  &__levels {
+    display: flex;
     gap: s.$space-2;
+    margin-top: s.$space-2;
   }
 
-  @include media.mobile {
-    flex-direction: column;
-    align-items: stretch;
-    gap: s.$space-3;
-  }
-}
+  &__level {
+    @include t.label-sm;
 
-/*
-  시안 단추.
-
-  시연 자리에서 한 번에 눌려야 하므로 손가락 너비(44px)를 밑돌지 않게 둔다. 글자가 「A」 한
-  자뿐이라 폭을 글자에 맡기면 단추가 그만큼 작아진다 — 최소 폭을 따로 준다.
-*/
-.go {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 56px;
-  height: 44px;
-  padding: 0 s.$space-4;
-  border: 1px solid var(--brand-soft-border);
-  border-radius: s.$radius-md;
-  background-color: var(--brand-soft);
-  color: var(--brand-contrast);
-  transition: background-color 0.16s ease, border-color 0.16s ease;
-
-  @include t.label-md;
-
-  &:hover {
-    border-color: var(--brand);
-    background-color: var(--surface-hover);
-  }
-
-  @include media.reduced-motion {
-    transition: none;
-  }
-
-  @include media.mobile {
     flex: 1;
+    padding: s.$space-2 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: s.$radius-md;
+    background-color: var(--surface-sunken);
+    color: var(--text);
+    text-align: center;
+    text-decoration: none;
+    transition: border-color 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+
+    &:hover {
+      border-color: var(--brand);
+      background-color: var(--brand-soft);
+      color: var(--brand);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    @include media.reduced-motion {
+      transition: none;
+    }
   }
 }
