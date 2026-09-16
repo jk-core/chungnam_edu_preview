@@ -38,10 +38,18 @@
     font-weight: 500;
   }
 
+  /*
+    기간 이름이 서는 칸.
+
+    34px 는 15px 글자에 맞춰 잰 값이라 시안 B(`.control-draft`) 처럼 글자를 한 단 키운 화면에서
+    「금일」 이 두 줄로 갈렸다 — 두 글자에 35.6px 가 드는데 칸이 34px 였다. 글자를 따라 늘어나는
+    단위로 잡고, 한 자라도 모자라면 바로 갈리는 자리라 줄바꿈도 막아 둔다.
+  */
   thead th:first-child,
   tbody th {
-    width: 34px;
+    width: 2.4em;
     text-align: left;
+    white-space: nowrap;
   }
 
   tbody th {

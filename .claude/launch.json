@@ -4,8 +4,21 @@
     {
       "name": "chungnam-edu-dev",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
       "port": 3100
+    },
+    {
+      "name": "chungnam-edu-preview-dev",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": [
+        "dev",
+        "--port",
+        "3200",
+        "--strictPort"
+      ],
+      "port": 3200
     }
   ]
 }
