@@ -1,0 +1,603 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+@use "@/styles/patterns/toolbar" as toolbar;
+@include toolbar.bar;
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-4;
+}
+
+.fault {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-5;
+  align-items: flex-start;
+
+  &__images {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: s.$space-3;
+    width: 100%;
+  }
+
+  &__image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border: 1px solid var(--border-subtle);
+    border-radius: s.$radius-md;
+    background-color: var(--surface-sunken);
+    object-fit: cover;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    // 사진을 훑을 때 어느 것을 보고 있는지 드러나게 한다
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: var(--shadow-md);
+    }
+  }
+
+  &__block {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-2;
+    width: 100%;
+    padding-left: s.$space-4;
+    border-left: 2px solid var(--border);
+
+    &--action {
+      border-left-color: var(--solar);
+    }
+  }
+
+  &__blockTitle {
+    color: var(--text-strong);
+
+    @include t.label-md;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-2;
+    color: var(--text-muted);
+    list-style: none;
+
+    @include t.body-md;
+
+    li {
+      position: relative;
+      padding-left: s.$space-4;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0.62em;
+        left: 0;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background-color: var(--border-strong);
+      }
+    }
+  }
+}
+
+@include media.reduced-motion {
+  .fault__image {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+.deltaDown {
+  color: var(--critical-text);
+}
+
+// ── 일자별 발전효율 카드 조작부 ─────────────────────────────
+.dailyActions {
+  display: flex;
+  align-items: center;
+  gap: s.$space-2;
+  flex-wrap: wrap;
+}
+
+// 고장코드 안내 — 코드를 눌러 상세로 바로 넘어간다
+.guideList {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-2;
+  list-style: none;
+}
+
+.guideItem {
+  &__button {
+    display: flex;
+    align-items: center;
+    gap: s.$space-3;
+    width: 100%;
+    padding: s.$space-3;
+    border: 1px solid var(--border-subtle);
+    border-radius: s.$radius-sm;
+    background-color: var(--surface);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+
+    &:hover {
+      border-color: var(--brand-soft-border);
+      background-color: var(--brand-soft);
+    }
+
+    &:active {
+      transform: scale(0.995);
+    }
+  }
+
+  &__swatch {
+    display: block;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+  }
+
+  &__name {
+    @include t.label-md;
+
+    min-width: 92px;
+    color: var(--text-strong);
+  }
+
+  &__summary {
+    @include t.body-sm;
+
+    color: var(--text-muted);
+  }
+}
+
+.guideSwatch {
+  &--c0 {
+    background-color: var(--ok-soft);
+  }
+
+  &--c1 {
+    background-color: color-mix(in srgb, var(--series-5) 26%, transparent);
+  }
+
+  &--c2 {
+    background-color: color-mix(in srgb, var(--series-3) 26%, transparent);
+  }
+
+  &--c3 {
+    background-color: color-mix(in srgb, var(--caution) 24%, transparent);
+  }
+
+  &--c4 {
+    background-color: color-mix(in srgb, var(--caution) 38%, transparent);
+  }
+
+  &--c5 {
+    background-color: color-mix(in srgb, var(--series-6) 30%, transparent);
+  }
+
+  &--c6 {
+    background-color: color-mix(in srgb, var(--solar) 34%, transparent);
+  }
+
+  &--c7 {
+    background-color: var(--critical-soft);
+  }
+}
+
+@include media.reduced-motion {
+  .guideItem__button {
+    transition: none;
+
+    &:active {
+      transform: none;
+    }
+  }
+}
+
+.unitSummary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: s.$space-3 s.$space-5;
+  padding-bottom: s.$space-3;
+  border-bottom: 1px solid var(--border-subtle);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+    color: var(--text-muted);
+  }
+
+  &__title {
+    @include t.label-md;
+
+    color: var(--text-strong);
+  }
+
+  &__total {
+    @include t.data-sm;
+
+    color: var(--text-strong);
+
+    small {
+      @include t.caption;
+
+      margin-left: 2px;
+      color: var(--text-muted);
+    }
+  }
+
+  &__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: s.$space-2 s.$space-4;
+    margin-left: auto;
+    list-style: none;
+  }
+
+  &__chip {
+    @include t.caption;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+
+    strong {
+      @include t.data-sm;
+
+      color: var(--text-strong);
+    }
+  }
+
+  &__dot {
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+}
+
+.unitDot {
+  &--running {
+    background-color: var(--ok);
+  }
+
+  &--degraded {
+    background-color: var(--caution);
+  }
+
+  &--fault {
+    background-color: var(--critical);
+  }
+
+  &--commLost,
+&--ready {
+    background-color: var(--offline);
+  }
+}
+
+// 계측 추이 차트 아래 조작 안내
+.trendHint {
+  @include t.caption;
+
+  margin-top: s.$space-2;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+.unitTable {
+  margin-top: s.$space-4;
+
+  &__name {
+    color: var(--brand-contrast);
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.16s ease;
+
+    &:hover {
+      text-decoration-color: currentcolor;
+    }
+  }
+}
+
+// 심층 진단 머리 요약 (SFR-013-09/10)
+.deepSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: s.$space-4;
+  margin: 0 0 s.$space-4;
+  padding-bottom: s.$space-4;
+  border-bottom: 1px solid var(--border-subtle);
+
+  @include media.mobile {
+    grid-template-columns: 1fr;
+    gap: s.$space-3;
+  }
+
+  dt {
+    @include t.label-sm;
+
+    margin-bottom: 2px;
+    color: var(--text-faint);
+  }
+
+  dd {
+    @include t.data-md;
+
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    margin: 0;
+    color: var(--text-strong);
+
+    small {
+      @include t.caption;
+
+      color: var(--text-muted);
+    }
+  }
+}
+
+.unitGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: s.$space-4;
+  margin-top: s.$space-4;
+  list-style: none;
+
+  @include mx.stretch-cells;
+
+  @include media.tablet {
+    grid-template-columns: 1fr;
+  }
+
+  &__more {
+    @include t.caption;
+
+    margin-top: s.$space-3;
+    color: var(--text-muted);
+  }
+}
+
+.unit {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-3;
+  padding: s.$space-4 s.$space-4 s.$space-4 s.$space-5;
+  border: 1px solid var(--unit-edge, var(--border-subtle));
+  border-radius: s.$radius-md;
+
+  /*
+   * 이상이 있는 설비는 제 색으로 옅게 물들었다가 진해지기를 되풀이한다.
+   * 밝기는 전역 --pulse 시계를 그대로 읽어 화면의 다른 점등과 박자가 어긋나지 않는다.
+   */
+  background-color: color-mix(
+    in srgb,
+    var(--unit-tint, var(--surface)) calc(var(--unit-base, 0%) + var(--pulse) * var(--unit-peak, 0%)),
+    var(--surface)
+  );
+
+  // 면은 밝게 두고 테두리와 그림자로 띄운다. 상태는 왼쪽 띠 하나로만 말한다.
+  box-shadow: inset 3px 0 0 var(--unit-accent, var(--border)), var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 3px 0 0 var(--unit-accent, var(--border)), var(--shadow-md);
+  }
+
+  :root[data-input="keyboard"] &:has(.unit__overlay:focus-visible) {
+    border-color: var(--brand);
+  }
+
+  &--running {
+    --unit-accent: var(--ok);
+  }
+
+  &--fault {
+    --unit-accent: var(--critical);
+    --unit-tint: var(--critical);
+    --unit-edge: color-mix(in srgb, var(--critical) 36%, transparent);
+    --unit-base: 8%;
+    --unit-peak: 12%;
+  }
+
+  &--degraded {
+    --unit-accent: var(--caution);
+    --unit-tint: var(--caution);
+    --unit-edge: color-mix(in srgb, var(--caution) 32%, transparent);
+    --unit-base: 8%;
+    --unit-peak: 11%;
+  }
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    cursor: pointer;
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+  }
+
+  &__icon {
+    display: inline-flex;
+    color: var(--text-faint);
+  }
+
+  &__name {
+    @include t.label-md;
+    @include mx.truncate;
+
+    flex: 1;
+    color: var(--text-strong);
+  }
+
+  &__spark {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-2;
+    padding-top: s.$space-1;
+  }
+
+  &__sparkLine {
+    display: block;
+    width: 100%;
+    height: 44px;
+  }
+
+  &__sparkCaption {
+    @include t.caption;
+
+    color: var(--text-faint);
+    text-align: right;
+  }
+
+  &__metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: s.$space-3;
+    margin: 0;
+    padding-top: s.$space-3;
+    border-top: 1px solid var(--border-subtle);
+
+    dt {
+      @include t.caption;
+
+      margin-bottom: 2px;
+      color: var(--text-faint);
+    }
+
+    dd {
+      @include t.data-sm;
+
+      margin: 0;
+      color: var(--text-strong);
+
+      small {
+        @include t.caption;
+
+        margin-left: 2px;
+        color: var(--text-muted);
+      }
+    }
+  }
+
+  &--commLost,
+&--ready {
+    --unit-accent: var(--offline);
+    --unit-tint: var(--offline);
+    --unit-edge: color-mix(in srgb, var(--offline) 26%, transparent);
+    --unit-base: 5%;
+    --unit-peak: 7%;
+  }
+}
+
+/*
+  카드 전체가 그 설비로 내려가는 버튼이다 (`unit__overlay`).
+  본문을 통째로 위 층에 올리면 그 버튼이 덮여 카드를 눌러도 아무 일이 없다.
+  그래서 위 층에는 정말 눌러야 하는 것 — 원인·조치를 여는 이상 밴드 — 만 올린다.
+*/
+button.unitAlert {
+  position: relative;
+  z-index: 1;
+}
+
+// 나머지는 글자만 있는 자리라 클릭을 그대로 흘려보낸다.
+.unit__head,
+.unit__spark,
+.unit__metrics,
+p.unitAlert {
+  position: relative;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.unitAlert {
+  display: flex;
+  align-items: center;
+  gap: s.$space-2;
+  width: 100%;
+  padding: s.$space-2 s.$space-3;
+  border-radius: s.$radius-xs;
+  text-align: left;
+  transition: filter 0.16s ease;
+
+  @include t.body-sm;
+
+  &--normal {
+    background-color: var(--ok-soft);
+    color: var(--ok-text);
+  }
+
+  &--degraded {
+    background-color: var(--caution-soft);
+    color: var(--caution-text);
+  }
+
+  &--running {
+    background-color: var(--ok-soft);
+    color: var(--ok-text);
+  }
+
+  &__cause {
+    @include mx.truncate;
+
+    flex: 1;
+  }
+
+  &--fault,
+&--commLost {
+    background-color: var(--critical-soft);
+    color: var(--critical-text);
+  }
+}
+
+button.unitAlert {
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(0.97);
+  }
+}
+
+@include media.reduced-motion {
+  .unit {
+    transition: none;
+
+    // 점등이 멎으면 --pulse 가 0 에 머문다 — 가장 진할 때로 고정해 상태색을 잃지 않는다.
+    background-color: color-mix(
+      in srgb,
+      var(--unit-tint, var(--surface)) calc(var(--unit-base, 0%) + var(--unit-peak, 0%)),
+      var(--surface)
+    );
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

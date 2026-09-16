@@ -1,0 +1,44 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+
+.breadcrumb {
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: s.$space-1;
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: s.$space-1;
+  }
+
+  &__separator {
+    width: 13px;
+    height: 13px;
+    color: var(--text-faint);
+  }
+
+  &__link {
+    color: var(--text-muted);
+    transition: color 0.14s ease;
+
+    @include t.caption;
+
+    &:hover {
+      color: var(--brand-contrast);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+  }
+
+  &__current {
+    color: var(--text-strong);
+
+    @include t.caption;
+
+    font-weight: 600;
+  }
+}

@@ -1,0 +1,795 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+/*
+  어두운 화면의 지도.
+
+  카카오는 밝은 타일 한 벌만 준다 — 어두운 상황판에서 지도만 하얗게 떠 눈이 부시고, 그
+  판만 다른 화면처럼 보인다. 타일을 뒤집어 어둡게 만든 다음, 그 위에 얹힌 것들은 같은 값을
+  한 번 더 걸어 원래 색으로 되돌린다. 되돌리지 않으면 상태 색이 보색으로 바뀌어 경고가
+  초록으로, 정상이 붉게 보인다.
+
+  invert 와 hue-rotate(180deg) 는 각각 두 번 걸면 제자리로 오는 값이라, 되돌리는 데
+  같은 식을 그대로 쓴다. 축척 막대와 카카오 로고도 지도 위에 얹힌 것이라 함께 되돌린다.
+*/
+@mixin map-dark {
+  [data-theme="dark"] & {
+    filter: invert(1) hue-rotate(180deg);
+
+    // 우리가 얹은 마커·묶음은 되돌린다
+    :is(.pin, .cluster) {
+      filter: invert(1) hue-rotate(180deg);
+    }
+
+    /*
+      축척 막대는 뒤집힌 채로 둔다.
+
+      카카오가 검정 글씨로 못 박아 두어 되돌리면 어두운 지도 위에서 글씨가 사라진다.
+      뒤집힌 채면 흰 글씨가 되어 그대로 읽힌다. 대신 그 옆 카카오 로고는 색이 있는 그림이라
+      되돌려 원래 색을 지킨다 — 지도 출처 표기는 제 모습이어야 한다.
+    */
+    > div:not(:first-child) img {
+      filter: invert(1) hue-rotate(180deg);
+    }
+  }
+}
+
+/*
+  뒤집은 타일의 색을 고른다.
+
+  뒤집기만 하면 밝은 땅 색이 누런 갈색으로 앉아 어두운 화면의 푸른 결과 따로 논다.
+  뒤집기는 정확히 되돌려야 하므로 건드리지 않고, 톤은 바깥 칸에 한 겹 얹어 낮춘다 —
+  마커까지 함께 옅어지지만 그 정도는 눈에 띄지 않는다.
+*/
+@mixin map-dark-grade {
+  [data-theme="dark"] & {
+    filter: saturate(0.62) brightness(0.92);
+  }
+}
+
+/*
+  지도 껍데기.
+  옆에 나란히 선 판(도넛 등)이 더 크면 이 칸도 그만큼 늘어나는데, 안쪽 지도가 고정 높이면
+  아래가 빈 채로 남아 둘의 키가 안 맞아 보인다. 넘겨받은 높이는 최소치로만 쓰고
+  남는 세로는 지도가 채운다.
+*/
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.map {
+  position: relative;
+  flex: 1;
+  border: 1px solid var(--map-border);
+  border-radius: s.$radius-md;
+  background:
+    radial-gradient(80% 70% at 50% 0%, var(--brand-soft) 0%, transparent 64%),
+    var(--map-surface);
+  overflow: hidden;
+
+  @include map-dark-grade;
+
+  &__viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__stage {
+    transition: transform 0.18s ease-out;
+  }
+}
+
+@include media.reduced-motion {
+  .map__stage {
+    transition: none;
+  }
+
+  .clusterList {
+    animation: none;
+  }
+
+  .clusterList__item,
+  .clusterList__close {
+    transition: none;
+
+  @include mx.press;
+  }
+}
+
+.province {
+  // ── 경계와 시·군 라벨 ───────────────────────────────────────
+  & path {
+    // 도 안쪽 시·군 경계선을 옅게 남긴다.
+    stroke-width: 0.4;
+  }
+}
+
+.region {
+  &__halo,
+  &__label {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    text-anchor: middle;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  // 굵기는 글자와 같은 배율로 되돌려야 해서 컴포넌트가 인라인으로 준다.
+  &__halo {
+    fill: none;
+    stroke: var(--surface);
+    stroke-linejoin: round;
+  }
+
+  &__label {
+    fill: var(--text-muted);
+  }
+}
+
+.marker {
+  cursor: pointer;
+
+  @include mx.keyboard-focus {
+    outline: none;
+
+    .marker__dot {
+      stroke: var(--brand);
+      stroke-width: 2.6;
+      filter: drop-shadow(0 0 4px color-mix(in srgb, var(--brand) 60%, transparent));
+    }
+  }
+
+  &--selected .marker__dot {
+    stroke: var(--brand);
+    stroke-width: 2.4;
+  }
+
+  &__dot {
+    stroke: var(--surface);
+    stroke-width: 1.4;
+    transition: r 0.16s ease;
+
+    &--ok {
+      fill: var(--ok);
+    }
+
+    &--brand {
+      fill: var(--brand);
+    }
+
+    &--caution {
+      fill: var(--caution);
+    }
+
+    &--critical {
+      fill: var(--critical);
+    }
+
+    &--offline {
+      fill: var(--offline);
+    }
+
+    &--neutral {
+      fill: var(--text-faint);
+    }
+  }
+
+  &__ring {
+    fill: none;
+    stroke: var(--critical);
+    stroke-width: 1;
+    opacity: 0.5;
+  }
+}
+
+/*
+  묶음 표시. 같은 이름이 두 지도에서 쓰인다 — 대한민국 지도의 SVG 묶음과
+  카카오 지도 위에 얹히는 알약 배지다. 겹치는 규칙은 서로 방해하지 않는다.
+*/
+.cluster {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border: 2px solid var(--brand);
+  border-radius: 999px;
+  background-color: var(--surface-raised);
+  color: var(--brand-contrast);
+  font-family: var(--font-data);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.16s ease;
+
+  // SVG 에 사각 outline 이 걸리면 원형 묶음과 어긋나 보인다 — 테두리를 밝혀 대신 알린다.
+  @include mx.keyboard-focus {
+    outline: none;
+
+    .cluster__bubble {
+      stroke: var(--brand);
+      stroke-width: 2.6;
+      filter: drop-shadow(0 0 4px color-mix(in srgb, var(--brand) 60%, transparent));
+    }
+  }
+
+  /*
+    확대는 **알약 배지에만** 건다.
+
+    같은 클래스를 SVG 지도의 `<g>` 도 쓰는데, 그쪽은 `transform` 어트리뷰트로 자리를 잡는다.
+    CSS 의 `transform` 이 그 어트리뷰트를 덮어써서, 마우스를 올리면 묶음이 좌표를 잃고 SVG
+    원점으로 날아갔다 — 커서를 벗어나면 제자리로 돌아오고 돌아오면 다시 커서 아래라, 왕복이
+    끝없이 되풀이됐다. SVG 쪽은 아래 테두리 굵기로만 반응한다.
+  */
+  &:hover:not(g) {
+    transform: scale(1.08);
+  }
+
+  &:hover .cluster__bubble {
+    stroke-width: 2.2;
+  }
+
+  /* 묶음도 같은 까닭으로 밝게 뒤집는다 — 숫자는 어둡게 앉힌다 */
+  [data-theme="dark"] & {
+    background-color: rgb(236 243 252 / 96%);
+    color: var(--paper);
+
+    .cluster__bubble {
+      fill: rgb(236 243 252 / 96%);
+    }
+
+    .cluster__count {
+      color: var(--paper);
+    }
+  }
+
+  &__bubble {
+    fill: var(--surface);
+    stroke: var(--brand);
+    stroke-width: 1.4;
+  }
+
+  &__count {
+    fill: var(--brand-contrast);
+    font-family: var(--font-data);
+    font-size: 10px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  &__abnormal {
+    fill: var(--critical);
+  }
+
+  &__flag {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid var(--surface-raised);
+    border-radius: 50%;
+    background-color: var(--critical);
+    opacity: calc(0.5 + 0.5 * var(--pulse));
+    box-shadow: 0 0 0 calc(2px * var(--pulse)) color-mix(in srgb, var(--critical) 32%, transparent);
+  }
+}
+
+.srOnly {
+  @include mx.sr-only;
+}
+
+.clusterList {
+  position: absolute;
+  top: s.$space-3;
+  right: s.$space-3;
+  bottom: s.$space-3;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  width: 236px;
+  max-width: calc(100% - #{s.$space-6});
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-md;
+  background-color: var(--surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: cluster-slide 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: s.$space-2;
+    padding: s.$space-3;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  &__title {
+    @include t.label-sm;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-strong);
+  }
+
+  &__count {
+    @include t.caption;
+
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: s.$radius-full;
+    background-color: var(--brand-soft);
+    color: var(--brand-contrast);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: s.$radius-xs;
+    color: var(--text-muted);
+    transition: background-color 0.14s ease;
+
+    @include mx.press;
+
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+  }
+
+  &__body {
+    flex: 1;
+    padding: s.$space-2;
+    list-style: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+    width: 100%;
+    padding: s.$space-2;
+    border-radius: s.$radius-xs;
+    text-align: left;
+    transition: background-color 0.14s ease;
+
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+
+    @include mx.keyboard-focus {
+      outline: none;
+      background-color: var(--brand-soft);
+      box-shadow: inset 0 0 0 1px var(--brand);
+    }
+  }
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 50%;
+  }
+
+  &__name {
+    @include t.body-sm;
+    @include mx.truncate;
+
+    flex: 1;
+    color: var(--text-strong);
+  }
+
+  &__meta {
+    @include t.caption;
+
+    flex-shrink: 0;
+    color: var(--text-faint);
+  }
+}
+
+@keyframes cluster-slide {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:root[data-input="keyboard"] .clusterList__close:focus-visible {
+  outline: none;
+  background-color: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+
+.dot {
+  &--ok {
+    background-color: var(--ok);
+  }
+
+  &--brand {
+    background-color: var(--brand);
+  }
+
+  &--caution {
+    background-color: var(--caution);
+  }
+
+  &--critical {
+    background-color: var(--critical);
+  }
+
+  &--offline {
+    background-color: var(--offline);
+  }
+}
+
+.controls {
+  position: absolute;
+  top: s.$space-3;
+  right: s.$space-3;
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-1;
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: s.$radius-xs;
+    background-color: var(--surface);
+    color: var(--text-muted);
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+
+    @include mx.press;
+
+    @include mx.keyboard-focus {
+      outline: none;
+      border-color: var(--brand);
+      background-color: var(--brand-soft);
+      color: var(--brand-contrast);
+    }
+
+    &:hover {
+      background-color: var(--surface-hover);
+      color: var(--text-strong);
+    }
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.legend {
+  position: absolute;
+  bottom: s.$space-3;
+  left: s.$space-3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: s.$space-1 s.$space-3;
+  padding: s.$space-2 s.$space-3;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-sm;
+  background-color: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(6px);
+
+  &__item {
+    @include t.caption;
+
+    display: inline-flex;
+    align-items: center;
+    gap: s.$space-1 + 2px;
+    color: var(--text-muted);
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+}
+
+.zoomNote {
+  @include t.caption;
+
+  position: absolute;
+  bottom: s.$space-3;
+  right: s.$space-3;
+  color: var(--text-faint);
+  font-family: var(--font-data);
+}
+
+:root[data-input="keyboard"] .popup__close:focus-visible {
+  outline: none;
+  background-color: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+
+// ── 카카오 지도 (SFR-007-05) ───────────────────────────────
+
+.kakao {
+  width: 100%;
+  height: 100%;
+
+  @include map-dark;
+}
+
+.mini {
+  width: 100%;
+  border: 1px solid var(--map-border);
+  border-radius: s.$radius-sm;
+  overflow: hidden;
+
+  @include map-dark-grade;
+
+  &__canvas {
+    width: 100%;
+    height: 100%;
+
+    @include map-dark;
+  }
+}
+
+/*
+  뾰족핀.
+
+  아래로 뻗은 꼭짓점이 발전소 자리를 정확히 짚는다 — 알약만 있으면 중심이 어디인지 눈으로
+  가늠해야 하고, 촘촘한 자리에서는 어느 점이 어느 학교인지 헷갈린다 (2026-08-21 회의).
+  꼭짓점만큼 아래 여백을 두고, 겹치는 그림은 그 여백 위에 그린다.
+*/
+.pin {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  margin-bottom: 7px;
+  padding: 0 9px 0 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+
+  /*
+    꼭짓점 — 알약과 같은 면·테두리 색을 쓰도록 마름모를 돌려 깔고 위를 알약으로 덮는다.
+
+    색을 물려받게(inherit) 둔다. 값을 따로 적어 두면 알약이 가리키거나 골라지거나 이상 상태로
+    물들 때 꼭짓점만 원래 색으로 남아, 마커 아래쪽이 떨어져 나온 것처럼 보인다.
+  */
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    border: 1px solid;
+    border-color: inherit;
+    border-radius: 1px;
+    background-color: inherit;
+    transform: translateX(-50%) rotate(45deg);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  }
+
+  &:hover {
+    z-index: 30;
+    border-color: var(--brand);
+    transform: scale(1.06);
+  }
+
+  /*
+    이름 글자는 손대지 않는다 — 기본 마커와 같은 진한 색 그대로다.
+    상태색으로 물들이면 12px 글씨가 지도 위에서 읽히지 않는다. 상태는 테두리·바탕·점이 이미 말하고 있다.
+  */
+  &--alert .pin__dot {
+    opacity: calc(0.55 + 0.45 * var(--pulse));
+    box-shadow: 0 0 calc(3px * var(--pulse)) var(--pin-tone);
+  }
+
+  &--selected .pin__name {
+    color: var(--text-on-brand);
+  }
+
+  // 브랜드 면 위에서는 상태점이 묻힌다 — 테를 둘러 살려 준다.
+  &--selected .pin__dot {
+    box-shadow: 0 0 0 1.5px var(--text-on-brand);
+  }
+
+  /*
+    어두운 화면에서는 마커를 밝게 뒤집는다.
+
+    다크 테마의 마커는 어두운 알약에 밝은 글씨다 — 그런데 지도까지 어두워지면 알약이 바탕에
+    묻혀 어디에 무엇이 있는지 보이지 않는다. 지도 위에 얹는 표시는 지도와 반대로 가야 한다.
+    상태를 말하는 점과 테두리 색은 그대로 두어, 어느 학교가 어떤 상태인지는 같은 색으로 읽는다.
+  */
+  [data-theme="dark"] &:not(.pin--selected) {
+    border-color: rgb(255 255 255 / 24%);
+    background-color: rgb(236 243 252 / 96%);
+
+    .pin__name {
+      color: var(--paper);
+    }
+  }
+
+  &__name {
+    color: var(--text-strong);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  &__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: var(--pin-tone, var(--text-faint));
+  }
+
+  &--ok {
+    --pin-tone: var(--ok);
+  }
+
+  &--brand {
+    --pin-tone: var(--brand);
+  }
+
+  &--caution {
+    --pin-tone: var(--caution);
+  }
+
+  &--critical {
+    --pin-tone: var(--critical);
+  }
+
+  &--offline {
+    --pin-tone: var(--offline);
+  }
+
+  &--alert {
+    border-color: var(--pin-tone);
+
+    /*
+      바탕은 상태색을 표면색에 **섞어** 만든다. 상태 soft 색을 그대로 쓰면 어두운 테마에서 반투명이라
+      아래 지도 타일이 비쳐 이름이 묻힌다. 섞어 두면 어느 테마에서도 불투명한 판이 남는다.
+    */
+    background-color: color-mix(in srgb, var(--pin-tone) 16%, var(--surface-raised));
+    box-shadow:
+      var(--shadow-sm),
+      0 0 0 calc(1px + 3px * var(--pulse)) color-mix(in srgb, var(--pin-tone) 34%, transparent);
+  }
+
+  &--selected {
+    z-index: 30;
+    border-color: var(--brand);
+    background-color: var(--brand);
+  }
+
+  &__ring {
+    position: absolute;
+    left: 3px;
+    width: 17px;
+    height: 17px;
+    border: 1px solid var(--critical);
+    border-radius: 50%;
+    opacity: calc(0.28 + 0.42 * var(--pulse));
+    transform: scale(calc(1 + 0.12 * var(--pulse)));
+  }
+}
+
+@include media.reduced-motion {
+  .pin,
+  .cluster {
+    transition: none;
+  }
+}
+
+@keyframes geo-dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.side {
+  position: absolute;
+  top: s.$space-3;
+  right: s.$space-3;
+  bottom: s.$space-3;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  width: 296px;
+  max-width: calc(100% - #{s.$space-6});
+  padding: s.$space-4;
+  border: 1px solid var(--border);
+  border-radius: s.$radius-md;
+  background-color: var(--surface-raised);
+  box-shadow: var(--shadow-lg);
+  overflow-y: auto;
+  animation: geo-side-in 0.2s ease-out;
+
+  @include media.mobile {
+    width: auto;
+    left: s.$space-3;
+  }
+
+  &__close {
+    position: absolute;
+    top: s.$space-2;
+    right: s.$space-2;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: s.$radius-full;
+    color: var(--text-muted);
+
+    &:hover {
+      background-color: var(--surface-sunken);
+      color: var(--text-strong);
+    }
+  }
+}
+
+@keyframes geo-side-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@include media.reduced-motion {
+  .side {
+    animation: none;
+  }
+}

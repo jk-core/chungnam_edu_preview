@@ -1,0 +1,272 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-4;
+}
+
+.scroll {
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  &__section {
+    padding-bottom: s.$space-5;
+  }
+
+  &__label {
+    @include t.label-md;
+
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: s.$space-2 0;
+    background-color: var(--surface-raised);
+    color: var(--text-strong);
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: s.$space-1;
+  table-layout: fixed;
+
+  &__caption {
+    @include mx.sr-only;
+  }
+
+  &__weekday {
+    @include t.caption;
+
+    padding-bottom: s.$space-1;
+    color: var(--text-faint);
+    font-weight: 500;
+    text-align: center;
+
+    &--sun {
+      color: var(--critical-text);
+    }
+
+    &--sat {
+      color: var(--brand-contrast);
+    }
+  }
+}
+
+.cellWrap {
+  padding: 0;
+  vertical-align: top;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 74px;
+  padding: s.$space-2;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-sm;
+  background-color: var(--surface);
+  text-align: left;
+  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+
+  &:hover {
+    border-color: var(--brand-soft-border);
+    background-color: var(--brand-soft);
+    transform: translateY(-1px);
+  }
+
+  @include media.mobile {
+    min-height: 58px;
+    padding: s.$space-1 + 2px;
+  }
+
+  &--empty {
+    min-height: 74px;
+    border: 1px dashed var(--border-subtle);
+    background-color: transparent;
+    cursor: default;
+
+    &:hover {
+      border-color: var(--border-subtle);
+      background-color: transparent;
+      transform: none;
+    }
+
+    @include media.mobile {
+      min-height: 58px;
+    }
+  }
+
+  &--selected {
+    border-color: var(--brand);
+    background-color: var(--brand-soft);
+    box-shadow: var(--shadow-focus);
+  }
+
+  &--today {
+    border-color: var(--solar);
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: s.$space-1;
+    width: 100%;
+  }
+
+  &__day {
+    @include t.data-sm;
+
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+
+    &--sun {
+      color: var(--critical-text);
+    }
+
+    &--sat {
+      color: var(--brand-contrast);
+    }
+  }
+
+  &__weather {
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+}
+
+// ── 연 그리드 ──────────────────────────────────────────────
+.yearGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: s.$space-2;
+
+  @include media.tablet {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include media.mobile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/*
+  연도 목록. 한 줄에 넷씩 세 줄이 기본이고, 굴리면 네 해씩 이어 붙는다 —
+  칸 수를 4의 약수로만 둬야 마지막 줄에 한두 칸만 남는 빈자리가 생기지 않는다.
+*/
+.yearList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: s.$space-2;
+
+  @include media.mobile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.yearCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: s.$space-3 s.$space-2;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-sm;
+  background-color: var(--surface);
+  text-align: center;
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+
+  &:hover {
+    border-color: var(--brand-soft-border);
+    background-color: var(--brand-soft);
+  }
+
+  &--selected {
+    border-color: var(--brand);
+    background-color: var(--brand-soft);
+    box-shadow: var(--shadow-focus);
+  }
+
+  &__label {
+    @include t.label-sm;
+
+    color: var(--text-muted);
+  }
+
+  &__hours {
+    @include t.data-md;
+
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__unit {
+    @include t.caption;
+
+    margin-left: 2px;
+    color: var(--text-muted);
+  }
+}
+
+.monthCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: s.$space-3;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-sm;
+  background-color: var(--surface);
+  text-align: left;
+  transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+
+  &:hover {
+    border-color: var(--brand-soft-border);
+    background-color: var(--brand-soft);
+    transform: translateY(-1px);
+  }
+
+  &--selected {
+    border-color: var(--brand);
+    background-color: var(--brand-soft);
+    box-shadow: var(--shadow-focus);
+  }
+
+  &__label {
+    @include t.label-sm;
+
+    color: var(--text-strong);
+  }
+
+  &__hours {
+    @include t.data-md;
+
+    margin-top: s.$space-1;
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__unit {
+    @include t.caption;
+
+    margin-left: 2px;
+    color: var(--text-muted);
+  }
+}
+
+.foot {
+  @include t.caption;
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: s.$space-1 s.$space-4;
+  color: var(--text-faint);
+}

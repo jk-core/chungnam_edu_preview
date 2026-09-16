@@ -1,0 +1,116 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+.lnb {
+  width: 100%;
+
+  @include media.tablet {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 20;
+    width: auto;
+    margin-inline: calc(#{s.$gutter-tablet} * -1);
+    padding-inline: s.$gutter-tablet;
+    background-color: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  @include media.mobile {
+    margin-inline: calc(#{s.$gutter-mobile} * -1);
+    padding-inline: s.$gutter-mobile;
+  }
+
+  &__title {
+    padding: 0 s.$space-3 s.$space-3;
+    color: var(--text-strong);
+
+    @include t.title-md;
+
+    @include media.tablet {
+      display: none;
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    @include media.tablet {
+      flex-direction: row;
+      gap: s.$space-1;
+      padding-block: s.$space-2;
+
+      @include mx.scroll-x;
+    }
+  }
+
+  &__item {
+    @include media.tablet {
+      flex-shrink: 0;
+    }
+  }
+
+  &__link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: s.$space-3;
+    border-radius: s.$radius-sm;
+    color: var(--text-muted);
+    transition: color 0.16s ease, background-color 0.16s ease;
+
+    @include t.body-md;
+
+    &:hover {
+      color: var(--text-strong);
+      background-color: var(--surface-hover);
+    }
+
+    @include media.tablet {
+      height: 38px;
+      padding-inline: s.$space-4;
+      border-radius: s.$radius-full;
+      white-space: nowrap;
+    }
+
+    /*
+      지금 있는 곳.
+
+      항목 사이를 미끄러져 옮겨 가던 표식을 걷어내고 그리는 것으로 바꿨다. 그 연출은 쪽을
+      옮길 때마다 옛 자리와 새 자리를 재서 이어 붙이는데, 좌측 메뉴는 한 묶음 안을 오가는
+      내내 그대로 남아 있으므로 그 재기가 페이지를 옮길 때마다 되풀이됐다. 자리를 잡지
+      못하면 표식이 엉뚱한 곳에 머문 채로 남는다.
+    */
+    &--active {
+      color: var(--brand-contrast);
+      font-weight: 600;
+      background-color: var(--brand-soft);
+
+      // 좌측 세로 강조선 — 데스크톱에서만 보인다.
+      &::before {
+        content: "";
+        position: absolute;
+        inset-block: 6px;
+        left: 0;
+        width: 3px;
+        border-radius: s.$radius-full;
+        background-color: var(--brand);
+      }
+
+      @include media.tablet {
+        &::before {
+          display: none;
+        }
+      }
+    }
+  }
+
+  &__label {
+    position: relative;
+    z-index: 1;
+  }
+}

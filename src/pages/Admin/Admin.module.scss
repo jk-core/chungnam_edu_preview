@@ -1,0 +1,567 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+@use "@/styles/patterns/toolbar" as toolbar;
+@include toolbar.bar;
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-4;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: s.$space-4;
+
+  @include mx.stretch-cells;
+
+  @include media.tablet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include media.mobile {
+    grid-template-columns: 1fr;
+  }
+
+  &--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+
+    @include media.tablet {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    @include media.mobile {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: s.$space-4;
+
+  @include mx.stretch-cells;
+
+  @include media.tablet {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── 등록 정보 dl ───────────────────────────────────────────
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: s.$space-4 s.$space-6;
+  margin: 0;
+  padding-top: s.$space-3;
+
+  @include media.mobile {
+    grid-template-columns: 1fr;
+  }
+
+  dt {
+    @include t.label-sm;
+
+    margin-bottom: 2px;
+    color: var(--text-faint);
+  }
+
+  dd {
+    @include t.body-sm;
+
+    margin: 0;
+    color: var(--text-strong);
+  }
+}
+
+// ── 수정·설비 이력 ─────────────────────────────────────────
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-2;
+}
+
+.historyItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: s.$space-2 s.$space-3;
+  padding: s.$space-3 s.$space-4;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-sm;
+  background-color: var(--surface-sunken);
+
+  &__at {
+    @include t.caption;
+
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__body {
+    @include t.body-sm;
+
+    color: var(--text);
+    flex: 1;
+    min-width: 200px;
+  }
+
+  &__diff {
+    color: var(--text-muted);
+
+    del {
+      color: var(--critical-text);
+      text-decoration: line-through;
+    }
+
+    ins {
+      color: var(--ok-text);
+      text-decoration: none;
+      font-weight: 600;
+    }
+  }
+}
+
+.capacity {
+  display: flex;
+  align-items: baseline;
+  gap: s.$space-2;
+  padding: s.$space-3 s.$space-4;
+  border: 1px solid var(--brand-soft-border);
+  border-radius: s.$radius-sm;
+  background-color: var(--brand-soft);
+
+  &__label {
+    @include t.label-sm;
+
+    color: var(--text-muted);
+  }
+
+  &__value {
+    @include t.data-md;
+
+    color: var(--brand-contrast);
+  }
+
+  &__note {
+    @include t.caption;
+
+    color: var(--text-faint);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-6;
+}
+
+/* 폼 한가운데 서는 단발 액션. 버튼이 칸처럼 늘어나지 않게 제 너비로 세운다. */
+.sectionAction {
+  align-self: flex-start;
+}
+
+.rate {
+  display: flex;
+  align-items: center;
+  gap: s.$space-3;
+
+  &__track {
+    position: relative;
+    display: block;
+    flex: 1;
+    height: 10px;
+    border-radius: s.$radius-full;
+    background-color: var(--surface-sunken);
+    overflow: hidden;
+  }
+
+  &__bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: block;
+    border-radius: s.$radius-full;
+    background-color: var(--ok);
+
+    &--low {
+      background-color: var(--critical);
+    }
+  }
+
+  &__value {
+    @include t.data-sm;
+
+    min-width: 52px;
+    color: var(--text-strong);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ── 권한 매트릭스 (SFR-023) ────────────────────────────────
+.matrixCheck {
+  color: var(--ok-text);
+  font-weight: 700;
+}
+
+.matrixDash {
+  color: var(--text-faint);
+}
+
+// 행 강조 — 품질 미달·잠금 계정
+.rowAlert {
+  background-color: var(--critical-soft);
+}
+
+.serverGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: s.$space-3;
+  padding-top: s.$space-2;
+}
+
+.server {
+  display: flex;
+  flex-direction: column;
+  gap: s.$space-2;
+  padding: s.$space-4;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-md;
+  background-color: var(--surface);
+
+  &--warning {
+    border-color: var(--caution);
+    background-color: var(--caution-soft);
+  }
+
+  &--critical {
+    border-color: var(--critical);
+    background-color: var(--critical-soft);
+  }
+
+  &__head {
+    @include t.label-md;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: s.$space-2;
+    color: var(--text-strong);
+  }
+
+  &__role,
+&__net {
+    @include t.caption;
+
+    color: var(--text-muted);
+  }
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: s.$space-2;
+
+  &__label {
+    @include t.caption;
+
+    color: var(--text-muted);
+  }
+
+  &__track {
+    display: block;
+    height: 8px;
+    border-radius: s.$radius-full;
+    background-color: var(--surface-sunken);
+    overflow: hidden;
+  }
+
+  &__bar {
+    display: block;
+    height: 100%;
+    border-radius: s.$radius-full;
+    background-color: var(--brand);
+
+    &--warning {
+      background-color: var(--caution);
+    }
+
+    &--critical {
+      background-color: var(--critical);
+    }
+  }
+
+  &__value {
+    @include t.caption;
+
+    color: var(--text-strong);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+}
+
+.stackCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &__sub {
+    @include t.caption;
+
+    color: var(--text-muted);
+  }
+}
+
+// 스트링 일괄 편집 — 한 줄이 스트링 하나다. 표가 아니라 입력 줄이라 그리드로 세운다
+.stringList {
+  display: flex;
+  flex-direction: column;
+}
+
+.stringRow {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 110px 110px auto;
+
+  /* 오류 문구가 붙은 칸만 길어진다 — 끝을 맞추면 그 칸의 입력창이 혼자 위로 솟는다. */
+  align-items: start;
+  gap: s.$space-3;
+  padding: s.$space-3 0;
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  @include media.tablet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* 라벨이 없는 칸이라, 라벨 한 줄만큼 비워 두어야 옆 칸 입력창과 같은 선에서 시작한다. */
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+
+    &::before {
+      @include t.label-sm;
+
+      content: "\00a0";
+      display: block;
+      margin-bottom: s.$space-2;
+    }
+  }
+}
+
+// 점검 문항 편집 — 한 줄이 문항 하나다
+.checkList {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkRow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+
+  /* 오류 문구가 붙은 행만 길어진다 — 끝을 맞추면 그 행의 입력창이 혼자 위로 솟는다. */
+  align-items: start;
+  gap: s.$space-3;
+  padding: s.$space-2 0;
+
+  &__no {
+    @include t.body-sm;
+
+    padding-top: s.$space-2;
+    color: var(--text-muted);
+    text-align: right;
+  }
+}
+
+// 입력 줄 목록의 발치 — 좌측 합계, 우측 추가 버튼
+.rowFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: s.$space-3;
+  margin-top: s.$space-4;
+}
+
+// ── 등록·수정 폼 한 장 ──────────────────────────────────────
+.formPage {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-lg;
+  background-color: var(--surface);
+
+  /*
+    모서리를 `overflow: hidden` 으로 자르지 않는다 — 그러면 아래 붙는 저장 줄의
+    `position: sticky` 가 죽어 긴 폼에서 저장 버튼이 화면 밖으로 나간다.
+    자를 것은 맨 아래 줄뿐이라 그 줄이 제 모서리를 갖는다.
+  */
+
+  /* 여백은 칸마다 제 몫으로 갖는다 — 아래 붙는 줄이 부모 패딩을 되돌리지 않게 */
+  &__head,
+  &__body {
+    padding: s.$space-6;
+
+    @include media.mobile {
+      padding: s.$space-5 s.$space-4;
+    }
+  }
+
+  &__head {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-2;
+    padding-bottom: s.$space-4;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  &__back {
+    @include t.label-sm;
+
+    display: inline-flex;
+    align-items: center;
+    gap: s.$space-1;
+    align-self: flex-start;
+    color: var(--text-muted);
+
+    &:hover {
+      color: var(--text-strong);
+    }
+  }
+
+  &__title {
+    @include t.title-lg;
+
+    color: var(--text-strong);
+  }
+
+  &__description {
+    @include t.body-sm;
+
+    color: var(--text-muted);
+  }
+
+  /* 폼이 길어 저장 버튼이 화면 밖으로 나가지 않게 아래에 붙여 둔다. */
+  &__foot {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: s.$space-2;
+    padding: s.$space-4 s.$space-6;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0 0 s.$radius-lg s.$radius-lg;
+    background-color: var(--surface-sunken);
+
+    @include media.mobile {
+      padding: s.$space-4;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: s.$space-2;
+    margin-left: auto;
+  }
+
+  &__danger {
+    display: flex;
+  }
+}
+
+// ── 골라 담은 것들 (담당 발전소 등) ─────────────────────────
+.chipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: s.$space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: s.$space-2;
+  padding: s.$space-2 s.$space-2 s.$space-2 s.$space-3;
+  border: 1px solid var(--border);
+  border-radius: s.$radius-full;
+  background-color: var(--surface);
+
+  &__label {
+    @include t.body-sm;
+
+    display: inline-flex;
+    align-items: baseline;
+    gap: s.$space-2;
+    color: var(--text-strong);
+  }
+
+  &__sub {
+    @include t.caption;
+
+    color: var(--text-faint);
+    font-family: var(--font-data);
+  }
+
+  &__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: s.$radius-full;
+    background: none;
+    color: var(--text-muted);
+    line-height: 1;
+
+    &:hover {
+      background-color: var(--surface-hover);
+      color: var(--critical-text);
+    }
+  }
+}
+
+// ── 폼 아래 접어 두는 참고 정보 ─────────────────────────────
+.more {
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-md;
+  background-color: var(--surface-sunken);
+
+  &__summary {
+    @include t.label-md;
+
+    padding: s.$space-3 s.$space-4;
+    color: var(--text-strong);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: "펼치기";
+      float: right;
+      color: var(--text-faint);
+    }
+  }
+
+  &[open] &__summary::after {
+    content: "접기";
+  }
+
+  &__body {
+    padding: 0 s.$space-4 s.$space-4;
+  }
+}

@@ -1,0 +1,83 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+.admin {
+  padding-bottom: s.$space-11;
+
+  &__head {
+    border-bottom: 1px solid var(--border-subtle);
+    background:
+      linear-gradient(180deg, var(--surface-sunken) 0%, transparent 100%),
+      var(--paper);
+  }
+
+  &__headInner {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-3;
+    padding: s.$space-7 0 s.$space-6;
+
+    @include mx.container;
+  }
+
+  &__badgeRow {
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+  }
+
+  &__intranet {
+    @include t.caption;
+
+    display: inline-flex;
+    align-items: center;
+    gap: s.$space-1 + 2px;
+    padding: 3px s.$space-2 + 2px;
+    border: 1px solid var(--caution);
+    border-radius: s.$radius-full;
+    background-color: var(--caution-soft);
+    color: var(--caution-text);
+  }
+
+  &__title {
+    @include t.title-xl;
+
+    color: var(--text-strong);
+  }
+
+  &__description {
+    @include t.body-sm;
+
+    color: var(--text-muted);
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns: s.$lnb-width minmax(0, 1fr);
+    gap: s.$space-8;
+    padding-top: s.$space-7;
+
+    @include mx.container;
+
+    @include media.tablet {
+      grid-template-columns: 1fr;
+      gap: s.$space-5;
+    }
+  }
+
+  &__side {
+    min-width: 0;
+
+    @include media.desktop {
+      position: sticky;
+      top: calc(var(--header-height) + #{s.$space-5});
+      align-self: start;
+    }
+  }
+
+  &__content {
+    min-width: 0;
+  }
+}

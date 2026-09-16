@@ -1,0 +1,384 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+@use "@/styles/utils/media" as media;
+@use "@/styles/utils/mixins" as mx;
+
+/*
+  중등 판 배치.
+
+  왼쪽 위가 원리, 왼쪽 아래가 발전량, 오른쪽이 이점이다. 원리 칸이 가장 넓은 것은 이 판이 설명하는 화면이기
+  때문이다 — 값을 재는 일보다 왜 그런지가 먼저다.
+*/
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+
+  /*
+    아래 칸(발전량)이 위 칸(원리)보다 높다.
+    글씨를 키운 뒤로 아래 칸의 설명 두 덩이가 두 줄씩 되어, 위가 더 넓던 때는 차트가 제 바닥에도
+    못 미쳐 글 위로 넘쳐 그려졌다. 위 칸은 그림이 줄어드는 것으로 버티고, 아래 칸은 차트가
+    더 줄면 눈금이 읽히지 않으므로 아래에 더 준다.
+  */
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1.12fr);
+  gap: s.$space-4;
+  height: 100%;
+  min-height: 0;
+
+  /* 이점 칸은 오른쪽에서 두 줄을 다 쓴다 — 나무가 커야 눈에 들어온다 */
+  > :last-child {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  @include media.tablet {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    height: auto;
+
+    > :last-child {
+      grid-column: auto;
+      grid-row: auto;
+    }
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+
+  /* 안팎의 여백을 한 단씩 좁혔다 — 세 카드 모두 본문이 칸을 넘겨 글이 그림 위로 흘렀다 */
+  gap: s.$space-2;
+  min-height: 0;
+
+  /* 칸이 좁아져 내용이 넘칠 때 아래 티커를 침범하지 않게 카드 안에서 끊는다 */
+  overflow: hidden;
+  padding: s.$space-3 s.$space-5;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-lg;
+  background-color: var(--surface);
+  box-shadow: var(--shadow-sm);
+
+  /*
+    카드 머리를 한 단 낮췄다 (2026-09-07 지시 — 글자와 그림이 겹친다).
+
+    이름과 한 줄이 67px 을 먹으면서 아래 본문이 제 바닥에도 못 미쳤다. 세 카드가 모두 37~61px
+    씩 넘쳐 그림 위로 글이 흘렀다. 이름은 무엇을 보는 칸인지만 알려 주면 되므로, 넘치는 쪽을
+    살리고 이쪽이 자리를 내준다.
+  */
+  &__head {
+    @include t.title-sm;
+
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex-shrink: 0;
+    color: var(--text-strong);
+  }
+
+  /* 카드 이름 아래 한 줄 — 캡션으로 두면 걸어 두고 몇 걸음 떨어져서는 읽히지 않는다 */
+  &__note {
+    @include t.body-sm;
+
+    color: var(--text-muted);
+  }
+}
+
+.principle {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: s.$space-5;
+  flex: 1;
+  min-height: 0;
+
+  @include media.tablet {
+    grid-template-columns: 1fr;
+  }
+
+  &__art {
+    /* 카드가 주는 높이 안에서 그림이 줄어들 여지를 남긴다 — 못 박아 두면 글 위로 넘친다 */
+    min-height: 120px;
+    height: 100%;
+    border-radius: s.$radius-md;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--surface-sunken) 100%);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: s.$space-2;
+    min-width: 0;
+    animation: middle-step-in 0.4s ease both;
+  }
+
+  &__term {
+    @include t.title-sm;
+
+    display: flex;
+    align-items: center;
+    gap: s.$space-2;
+    color: var(--text-strong);
+  }
+
+  &__no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: s.$radius-full;
+    background-color: var(--brand);
+    color: var(--text-on-brand);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.8125rem;
+  }
+
+  &__body {
+    @include t.body-md;
+
+    color: var(--text);
+  }
+}
+
+/* 지나간 단계로 되돌아갈 수 있게 이름을 늘어놓는다 */
+.steps {
+  display: flex;
+  gap: s.$space-2;
+  flex-wrap: wrap;
+  list-style: none;
+}
+
+.step {
+  &--active {
+    border-color: var(--brand);
+    background-color: var(--brand-soft);
+    color: var(--brand);
+  }
+
+  &,
+&--active {
+    @include mx.press;
+    @include t.label-sm;
+
+    padding: 4px s.$space-3;
+    border: 1px solid var(--border);
+    border-radius: s.$radius-full;
+    background-color: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  }
+}
+
+.production {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: s.$space-4;
+  flex: 1;
+  min-height: 0;
+
+  @include media.tablet {
+    grid-template-columns: 1fr;
+  }
+
+  &__chart {
+    position: relative;
+
+    /*
+      띄워 놓은 캔버스가 칸을 넘지 못하게 자른다.
+
+      echarts 는 넘겨준 높이로 캔버스를 그리는데, 칸이 줄어드는 순간과 다시 그리는 순간 사이에
+      옛 높이가 남아 아래로 삐져나온다. 곡선 아래로 26px 의 축 여백이 있어 잘려도 그림은 상하지 않는다.
+    */
+    overflow: hidden;
+
+    /* `MiddleProductionCard` 의 `MIN_CHART_HEIGHT` 와 같은 값 — 어긋나면 그림이 칸 밖으로 나간다 */
+    min-height: 118px;
+    border-radius: s.$radius-md;
+    background-color: var(--surface-sunken);
+  }
+
+  &__canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  &__sun {
+    min-height: 118px;
+    border-radius: s.$radius-md;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--surface-sunken) 100%);
+  }
+
+  &__notes {
+    display: flex;
+    gap: s.$space-4;
+
+    @include media.tablet {
+      flex-direction: column;
+    }
+  }
+}
+
+.note {
+  flex: 1;
+  min-width: 0;
+  padding-left: s.$space-3;
+  border-left: 2px solid var(--solar);
+  border-radius: 1px;
+
+  &__term {
+    @include t.label-md;
+
+    color: var(--text-strong);
+  }
+
+  &__body {
+    @include t.body-sm;
+
+    color: var(--text-muted);
+  }
+}
+
+/*
+  넉 장을 세로로 세운다.
+
+  칸 높이의 아래끝을 내용에 맞춘다(`min-content`). 넷을 똑같은 높이로 못 박아 두었더니
+  설명이 두 줄이 되는 칸에서 글이 상자 밖으로 넘쳐 아래 상자 위에 겹쳐 그려졌다 —
+  글씨를 키우고 나서는 어느 칸이 두 줄이 될지 폭에 따라 달라지므로, 높이를 고정할 수 없다.
+  남는 자리는 그대로 넷이 고르게 나눠 갖는다. 사이는 좁게 둔다 — 넷이 한 칸에 다 서야 하고,
+  넓히면 마지막 장이 칸 밖으로 밀린다.
+*/
+.benefit {
+  display: grid;
+  grid-auto-rows: minmax(min-content, 1fr);
+  gap: s.$space-1;
+  flex: 1;
+  min-height: 0;
+  list-style: none;
+}
+
+.impact {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: s.$space-3;
+  min-height: 0;
+  padding: s.$space-1 s.$space-3;
+  border: 1px solid var(--border-subtle);
+  border-radius: s.$radius-md;
+  background-color: var(--surface-sunken);
+
+  &__art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background-color: var(--surface);
+
+    svg {
+      width: 74%;
+      height: 74%;
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
+
+  /*
+    글씨 크기를 앱 기본 단계보다 키운다.
+
+    본문 기준으로 잡아 두었더니 이름표와 설명이 11px 이었다. 손에 쥐고 보는 화면이라면 충분하지만
+    이 판은 교실 뒤나 복도에서 몇 걸음 떨어져 보는 화면이라, 큰 숫자만 읽히고 그 숫자가 무엇인지와
+    왜 좋은지는 읽히지 않았다. 값 아래 한 줄이 읽혀야 표가 아니라 설명이 된다.
+  */
+  &__label {
+    @include t.label-md;
+
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  /*
+    값·자릿이름·단위 셋이 한 줄에 선다.
+
+    사이를 벌리지 않는다. 벌리면 「773 만 그루」 가 되는데, 「만」 은 수사의 일부라 숫자에 붙어야
+    한다 — 떨어뜨릴 것은 단위뿐이라 그쪽에만 여백을 준다.
+
+    큰 수는 한 단 내렸다 (2026-09-09 지시 — 글자가 너무 크다).
+
+    40px 로 세운 넉 장이 칸보다 21px 길어, 마지막 장이 아래 초록 띠와 겹쳐 그려지고 있었다.
+    이 칸에서 크게 읽혀야 할 것은 수 하나가 아니라 **넷이 나란히 선 모습**이라, 한 장을 키우는
+    것보다 넷이 다 들어오는 편이 낫다.
+  */
+  &__value {
+    @include t.data-lg;
+
+    display: flex;
+    align-items: baseline;
+    color: var(--text-strong);
+    font-size: 1.7rem;
+  }
+
+  /*
+    「만」·「억」.
+
+    숫자에 붙여 두되 크기는 한 단 내린다. 큰 숫자와 같은 40px 로 서 있어서 한 글자가 세 자리
+    숫자만큼 자리를 먹었고, 넉 장이 선 칸에서 그만큼이 아래로 밀렸다.
+    색은 숫자와 같다 — 수사의 일부라 단위처럼 흐려지면 「773」 과 「만」 이 다른 것으로 읽힌다.
+  */
+  &__suffix {
+    font-size: 0.62em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  &__unit {
+    @include t.label-md;
+
+    margin-left: 4px;
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+
+  &__line {
+    @include t.body-sm;
+
+    margin-top: 1px;
+    font-size: 0.9375rem;
+    line-height: 1.42;
+    color: var(--text-muted);
+  }
+}
+
+@keyframes middle-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  움직임을 줄여 달라고 한 사람에게도 단계는 계속 넘어간다 —
+  멈추면 네 단계 가운데 하나만 읽고 마는 셈이라 화면이 제 몫을 못 한다 (SFR-005-08).
+*/
+@include media.reduced-motion {
+  .principle__text {
+    animation: none;
+  }
+
+  .step,
+  .step--active {
+    transition: none;
+  }
+}

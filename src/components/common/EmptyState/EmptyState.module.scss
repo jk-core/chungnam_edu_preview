@@ -1,0 +1,29 @@
+@use "@/styles/tokens/spacing" as s;
+@use "@/styles/tokens/typography" as t;
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: s.$space-2;
+  padding: s.$space-10 s.$space-6;
+  text-align: center;
+
+  &__title {
+    color: var(--text-strong);
+
+    @include t.title-sm;
+  }
+
+  &__description {
+    max-width: 32ch;
+    color: var(--text-muted);
+
+    @include t.body-sm;
+  }
+
+  &__action {
+    margin-top: s.$space-3;
+  }
+}
